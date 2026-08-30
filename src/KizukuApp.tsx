@@ -18,6 +18,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { actionTemplates } from "./productModel";
+import { color, elevation, font, motion, radius, space, target, text } from "./tokens";
 import KizukuMark from "../assets/kizuku-mark.svg";
 import MeditatingFigure from "../assets/kizuku-meditating.svg";
 import WateringCan from "../assets/kizuku-watering-can.svg";
@@ -40,19 +41,6 @@ const assets = {
   seed: require("../assets/optimiser-seed.png"),
   sapling: require("../assets/sapling.png"),
   tree: require("../assets/optimiser-tree.png")
-};
-
-const palette = {
-  paper: "#FBF8EE",
-  paperSoft: "#F4EFDF",
-  white: "#FFFDF8",
-  forest: "#2C5228",
-  forestDark: "#0E2310",
-  forestPale: "#E9F0DD",
-  ink: "#221E16",
-  stone: "#7B7160",
-  stoneDark: "#4D4636",
-  line: "rgba(94, 85, 72, 0.15)"
 };
 
 function useReduceMotionPreference() {
@@ -206,7 +194,7 @@ function HomeScreen({
 
     Animated.timing(promptEntrance, {
       toValue: 1,
-      duration: 650,
+      duration: motion.enterSoft,
       easing: Easing.out(Easing.cubic),
       useNativeDriver: true
     }).start();
@@ -215,13 +203,13 @@ function HomeScreen({
       Animated.sequence([
         Animated.timing(landscapeDrift, {
           toValue: 1,
-          duration: 9000,
+          duration: motion.ambientDrift,
           easing: Easing.inOut(Easing.sin),
           useNativeDriver: true
         }),
         Animated.timing(landscapeDrift, {
           toValue: 0,
-          duration: 9000,
+          duration: motion.ambientDrift,
           easing: Easing.inOut(Easing.sin),
           useNativeDriver: true
         })
@@ -231,13 +219,13 @@ function HomeScreen({
       Animated.sequence([
         Animated.timing(treeBreath, {
           toValue: 1,
-          duration: 3200,
+          duration: motion.ambientBreath,
           easing: Easing.inOut(Easing.sin),
           useNativeDriver: true
         }),
         Animated.timing(treeBreath, {
           toValue: 0,
-          duration: 3200,
+          duration: motion.ambientBreath,
           easing: Easing.inOut(Easing.sin),
           useNativeDriver: true
         })
@@ -257,22 +245,20 @@ function HomeScreen({
       Animated.sequence([
         Animated.timing(treeResponse, {
           toValue: 1,
-          duration: 260,
+          duration: motion.reactTap,
           easing: Easing.out(Easing.cubic),
           useNativeDriver: true
         }),
         Animated.spring(treeResponse, {
           toValue: 0,
-          damping: 9,
-          stiffness: 130,
+          ...motion.reactSpring,
           useNativeDriver: true
         })
       ]).start();
     }
     Animated.spring(wateringPosition, {
       toValue: { x: 0, y: 0 },
-      damping: 12,
-      stiffness: 120,
+      ...motion.returnSpring,
       useNativeDriver: true
     }).start();
   };
@@ -381,7 +367,7 @@ function HomeScreen({
           <Ionicons
             name={todayCompleted ? "checkmark" : "arrow-forward"}
             size={25}
-            color={todayCompleted ? "#F2F5E9" : palette.stone}
+            color={todayCompleted ? "#F2F5E9" : color.stone[500]}
           />
         </Pressable>
       </Animated.View>
@@ -421,13 +407,13 @@ function WorryScreen({
               multiline
               onChangeText={onChange}
               placeholder="write anything. this stays private."
-              placeholderTextColor="#716B5F"
+              placeholderTextColor={color.stone[500]}
               style={styles.input}
               textAlignVertical="top"
               value={value}
             />
             <View style={styles.micButton}>
-              <Ionicons name="mic-outline" size={17} color={palette.stoneDark} />
+              <Ionicons name="mic-outline" size={17} color={color.stone[700]} />
             </View>
           </View>
           <View style={styles.inputNote}>
@@ -438,7 +424,7 @@ function WorryScreen({
         </View>
 
         <View style={styles.privateLine}>
-          <Ionicons name="lock-closed-outline" size={12} color={palette.forest} />
+          <Ionicons name="lock-closed-outline" size={12} color={color.forest[500]} />
           <Text style={styles.privateText}>private · stays on this device</Text>
         </View>
 
@@ -446,7 +432,6 @@ function WorryScreen({
           <PrimaryButton label="get my action" disabled={value.trim().length < 4} onPress={onContinue} />
         </View>
       </View>
-      <BottomNav active="home" onSelect={onTab} />
     </GradientScreen>
   );
 }
@@ -529,7 +514,7 @@ function ActionScreen({
 
         <View style={styles.actionCard}>
           <View style={styles.actionTag}>
-            <Ionicons name="sparkles-outline" size={13} color={palette.stone} />
+            <Ionicons name="sparkles-outline" size={13} color={color.stone[500]} />
             <Text style={styles.actionTagText}>{action.tag}</Text>
           </View>
           <Text style={styles.actionCopy}>{action.text}</Text>
@@ -545,7 +530,6 @@ function ActionScreen({
           <SecondaryButton label="this doesn't feel right" onPress={onSwap} />
         </View>
       </View>
-      <BottomNav active="home" onSelect={onTab} />
     </GradientScreen>
   );
 }
@@ -630,13 +614,13 @@ function ReflectionScreen({
                 multiline
                 onChangeText={onChange}
                 placeholder="no judgement. just what happened."
-                placeholderTextColor="#716B5F"
+                placeholderTextColor={color.stone[500]}
                 style={styles.input}
                 textAlignVertical="top"
                 value={value}
               />
               <View style={styles.micButton}>
-                <Ionicons name="mic-outline" size={17} color={palette.stoneDark} />
+                <Ionicons name="mic-outline" size={17} color={color.stone[700]} />
               </View>
             </View>
             <View style={styles.inputNote}>
@@ -655,7 +639,6 @@ function ReflectionScreen({
           />
         </View>
       </View>
-      <BottomNav active="home" onSelect={onTab} />
     </GradientScreen>
   );
 }
@@ -777,12 +760,12 @@ function ProfileScreen({
           {rows.map((row, index) => (
             <View key={row.label} style={[styles.settingsRow, index < rows.length - 1 && styles.settingsRowBorder]}>
               <View style={styles.settingsLabel}>
-                <Ionicons name={row.icon} size={17} color={palette.stone} />
+                <Ionicons name={row.icon} size={17} color={color.stone[500]} />
                 <Text style={styles.settingsLabelText}>{row.label}</Text>
               </View>
               <View style={styles.settingsValue}>
                 <Text style={styles.settingsValueText}>{row.value}</Text>
-                <Ionicons name="chevron-forward" size={14} color={palette.stone} />
+                <Ionicons name="chevron-forward" size={14} color={color.stone[500]} />
               </View>
             </View>
           ))}
@@ -819,7 +802,7 @@ function IconButton({
 }) {
   return (
     <Pressable accessibilityLabel={label} accessibilityRole="button" onPress={onPress} style={({ pressed }) => [styles.iconButton, pressed && styles.pressed]}>
-      <Ionicons name={icon} size={18} color={palette.stoneDark} />
+      <Ionicons name={icon} size={18} color={color.stone[700]} />
     </Pressable>
   );
 }
@@ -857,7 +840,7 @@ function SecondaryButton({
 }) {
   return (
     <Pressable accessibilityRole="button" onPress={onPress} style={({ pressed }) => [styles.secondaryButton, pressed && styles.pressed]}>
-      {icon ? <Ionicons name={icon} size={17} color={palette.forest} /> : null}
+      {icon ? <Ionicons name={icon} size={17} color={color.forest[500]} /> : null}
       <Text style={styles.secondaryButtonText}>{label}</Text>
     </Pressable>
   );
@@ -882,7 +865,7 @@ function BottomNav({ active, onSelect }: { active: MainTab; onSelect: (tab: Main
             onPress={() => onSelect(item.id)}
             style={styles.navItem}
           >
-            <Ionicons name={item.icon} size={20} color={selected ? palette.forest : "#A59D90"} />
+            <Ionicons name={item.icon} size={20} color={selected ? color.forest[500] : color.stone[400]} />
             <Text style={[styles.navLabel, selected && styles.navLabelActive]}>{item.label}</Text>
           </Pressable>
         );
@@ -899,72 +882,53 @@ const styles = StyleSheet.create({
     width: "100%",
     maxWidth: 430,
     overflow: "hidden",
-    backgroundColor: palette.paper,
+    backgroundColor: color.paper[50],
     ...Platform.select({ web: { boxShadow: "0 24px 80px rgba(0,0,0,0.35)" } })
   },
   center: { alignItems: "center", justifyContent: "center" },
-  paperScreen: { backgroundColor: palette.paper },
+  paperScreen: { backgroundColor: color.paper[50] },
   pressed: { opacity: 0.78, transform: [{ scale: 0.985 }] },
   hidden: { opacity: 0 },
-  homeRoot: { flex: 1, overflow: "hidden", backgroundColor: palette.paperSoft },
-  homeBackground: {
-    position: "absolute",
-    top: -240,
-    bottom: 0,
-    left: -8,
-    width: "105%",
-    height: "120%"
-  },
+
+  // home
+  homeRoot: { flex: 1, overflow: "hidden", backgroundColor: color.paper[100] },
+  homeBackground: { position: "absolute", top: -240, bottom: 0, left: -8, width: "105%", height: "120%" },
   homeHeader: {
     position: "absolute",
     top: 28,
-    left: 22,
-    right: 22,
+    left: space.gutter,
+    right: space.gutter,
     flexDirection: "row",
     alignItems: "flex-start",
     justifyContent: "space-between",
     zIndex: 3
   },
-  brandBlock: { gap: 4 },
-  brandRow: { flexDirection: "row", alignItems: "center", gap: 9 },
-  brandName: { color: palette.forest, fontFamily: "Avenir Next", fontSize: 27, fontWeight: "500" },
-  homeTitle: { color: "rgba(44,82,40,0.62)", fontFamily: "Avenir Next", fontSize: 18, fontWeight: "500", marginLeft: 2 },
+  brandBlock: { gap: space.xxs },
+  brandRow: { flexDirection: "row", alignItems: "center", gap: space.xs },
+  brandName: { ...text.display, color: color.forest[500], fontFamily: font.serif },
+  homeTitle: { ...text.label, fontFamily: font.sans, color: color.stone[700], marginLeft: 2 },
   iconButton: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
+    width: target.min,
+    height: target.min,
+    borderRadius: target.min / 2,
     borderWidth: 1,
     borderColor: "rgba(123,113,96,0.18)",
     backgroundColor: "rgba(255,255,255,0.72)",
     alignItems: "center",
     justifyContent: "center"
   },
-  heroTree: {
-    position: "absolute",
-    top: 205,
-    left: -2,
-    width: 326,
-    height: 360,
-    transformOrigin: "center bottom"
-  },
+  heroTree: { position: "absolute", top: 205, left: -2, width: 326, height: 360, transformOrigin: "center bottom" },
   heroTreeImage: { width: "100%", height: "100%" },
-  heroWateringCan: {
-    position: "absolute",
-    top: 420,
-    right: 0,
-    width: 154,
-    height: 162,
-    zIndex: 2
-  },
-  homeCardMotion: { position: "absolute", left: 20, right: 20, bottom: 146 },
+  heroWateringCan: { position: "absolute", top: 420, right: 0, width: 154, height: 162, zIndex: 2 },
+  homeCardMotion: { position: "absolute", left: space.gutter, right: space.gutter, bottom: 146 },
   homeCard: {
     minHeight: 104,
-    borderRadius: 20,
+    borderRadius: radius.card,
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.55)",
     backgroundColor: "rgba(255,253,248,0.92)",
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingHorizontal: space.gutter,
+    paddingVertical: space.md,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
@@ -975,111 +939,201 @@ const styles = StyleSheet.create({
     })
   },
   homeCardCompleted: { backgroundColor: "rgba(28,60,28,0.92)" },
-  homeCardCopy: { flex: 1, paddingRight: 12 },
-  homeCardTitle: { color: palette.forestDark, fontFamily: "Avenir Next", fontSize: 19, fontWeight: "500", lineHeight: 25 },
-  homeCardBody: { color: palette.stone, fontFamily: "Avenir Next", fontSize: 14, marginTop: 7 },
-  inverseText: { color: "#F2F5E9" },
-  inverseMuted: { color: "rgba(242,245,233,0.72)" },
-  flowContent: { flex: 1, paddingHorizontal: 22, paddingTop: 16, paddingBottom: 74 },
-  flowHeading: { marginTop: 24 },
-  eyebrow: { color: palette.forest, fontFamily: "Avenir Next", fontSize: 11, fontWeight: "700", letterSpacing: 1.7, textTransform: "lowercase" },
-  flowTitle: { color: palette.forestDark, fontFamily: "Avenir Next", fontSize: 23, fontWeight: "500", lineHeight: 32, marginTop: 9 },
+  homeCardCopy: { flex: 1, paddingRight: space.sm },
+  homeCardTitle: { ...text.heading, color: color.forest[700] },
+  homeCardBody: { ...text.label, fontFamily: font.sans, color: color.stone[500], marginTop: 7 },
+  inverseText: { color: color.onDark },
+  inverseMuted: { color: color.onDarkMuted },
+
+  // ritual flow — no tab bar, so the action sits a gutter off the bottom
+  flowContent: { flex: 1, paddingHorizontal: space.gutter, paddingTop: space.md, paddingBottom: space.lg },
+  flowHeading: { marginTop: space.lg },
+  eyebrow: { ...text.eyebrow, color: color.forest[500], textTransform: "uppercase" },
+  flowTitle: { ...text.title, color: color.forest[600], marginTop: space.xs },
   inputCard: {
     minHeight: 194,
-    borderRadius: 22,
+    borderRadius: radius.card,
     backgroundColor: "rgba(255,253,248,0.96)",
     borderWidth: 1,
-    borderColor: "rgba(28,60,28,0.07)",
-    padding: 19,
-    marginTop: 24,
-    ...Platform.select({
-      ios: { shadowColor: "#1C2E14", shadowOffset: { width: 0, height: 7 }, shadowOpacity: 0.08, shadowRadius: 16 },
-      android: { elevation: 3 },
-      default: { boxShadow: "0 7px 22px rgba(28,46,20,0.08)" }
-    })
+    borderColor: color.hairline,
+    padding: space.gutter,
+    marginTop: space.lg,
+    ...elevation.raised
   },
-  inputRow: { flexDirection: "row", alignItems: "flex-start", gap: 8, flex: 1 },
-  input: { flex: 1, minHeight: 116, color: palette.ink, fontFamily: "Avenir Next", fontSize: 16, lineHeight: 25, padding: 0 },
-  micButton: { width: 36, height: 36, borderRadius: 18, backgroundColor: "rgba(123,113,96,0.1)", alignItems: "center", justifyContent: "center" },
-  inputNote: { borderTopWidth: 1, borderStyle: "dashed", borderColor: palette.line, paddingTop: 12, marginTop: 8 },
-  inputNoteText: { color: palette.stone, fontFamily: "Avenir Next", fontSize: 12, lineHeight: 18 },
-  privateLine: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 5, marginTop: 15 },
-  privateText: { color: palette.forest, fontFamily: "Avenir Next", fontSize: 11, fontWeight: "600", letterSpacing: 0.4 },
-  bottomAction: { position: "absolute", left: 22, right: 22, bottom: 92 },
-  bottomActionStack: { position: "absolute", left: 22, right: 22, bottom: 92, gap: 12 },
-  primaryButton: { width: "100%", height: 52, borderRadius: 26, backgroundColor: palette.forest, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8 },
+  inputRow: { flexDirection: "row", alignItems: "flex-start", gap: space.xs, flex: 1 },
+  input: { flex: 1, minHeight: 116, ...text.body, color: color.stone[900], padding: 0 },
+  micButton: {
+    width: target.min,
+    height: target.min,
+    borderRadius: target.min / 2,
+    backgroundColor: "rgba(123,113,96,0.1)",
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  inputNote: { borderTopWidth: 1, borderStyle: "dashed", borderColor: color.line, paddingTop: space.sm, marginTop: space.sm },
+  inputNoteText: { ...text.caption, color: color.stone[500] },
+  privateLine: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 5, marginTop: space.md },
+  privateText: { fontFamily: font.sansSemibold, fontSize: 11, lineHeight: 15, letterSpacing: 0.4, color: color.forest[500] },
+  bottomAction: { position: "absolute", left: space.gutter, right: space.gutter, bottom: space.lg },
+  bottomActionStack: { position: "absolute", left: space.gutter, right: space.gutter, bottom: space.lg, gap: space.sm },
+
+  // controls
+  primaryButton: {
+    width: "100%",
+    height: target.control,
+    borderRadius: radius.pill,
+    backgroundColor: color.forest[500],
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: space.xs
+  },
   primaryButtonDisabled: { backgroundColor: "rgba(44,82,40,0.28)" },
-  primaryButtonText: { color: "#FFFFFF", fontFamily: "Avenir Next", fontSize: 15, fontWeight: "600" },
-  secondaryButton: { width: "100%", height: 52, borderRadius: 26, borderWidth: 1, borderColor: "rgba(44,82,40,0.24)", flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8 },
-  secondaryButtonText: { color: palette.forestDark, fontFamily: "Avenir Next", fontSize: 15, fontWeight: "500" },
-  thinkingFigure: { width: 112, height: 200, marginBottom: 28 },
-  thinkingText: { color: palette.forestDark, fontFamily: "Avenir Next", fontSize: 21, fontWeight: "500", marginTop: 13 },
-  actionCard: {
-    borderRadius: 22,
-    backgroundColor: palette.white,
-    padding: 23,
-    marginTop: 24,
-    ...Platform.select({
-      ios: { shadowColor: "#1C2E14", shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.12, shadowRadius: 18 },
-      android: { elevation: 5 },
-      default: { boxShadow: "0 10px 28px rgba(28,46,20,0.12)" }
-    })
+  primaryButtonText: { ...text.label, fontSize: 15, lineHeight: 20, color: "#FFFFFF" },
+  secondaryButton: {
+    width: "100%",
+    height: target.control,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    borderColor: "rgba(44,82,40,0.24)",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: space.xs
   },
-  actionTag: { flexDirection: "row", alignItems: "center", gap: 6 },
-  actionTagText: { color: palette.stone, fontFamily: "Avenir Next", fontSize: 10, fontWeight: "700", letterSpacing: 1.5 },
-  actionCopy: { color: palette.stoneDark, fontFamily: "Avenir Next", fontSize: 16.5, lineHeight: 27, marginTop: 14 },
-  actionNote: { borderTopWidth: 1, borderStyle: "dashed", borderColor: palette.line, paddingTop: 13, marginTop: 17 },
-  commitCopy: { position: "absolute", top: "28%", left: 32, right: 32, alignItems: "center" },
-  commitTitle: { color: palette.forestDark, fontFamily: "Avenir Next", fontSize: 27, lineHeight: 37, fontWeight: "500", textAlign: "center", marginTop: 14 },
-  progressTrack: { position: "absolute", top: "58%", left: 62, right: 62, height: 3, borderRadius: 2, backgroundColor: "rgba(28,60,28,0.12)", overflow: "hidden" },
-  progressFill: { height: 3, backgroundColor: palette.forest },
+  secondaryButtonText: { ...text.label, fontFamily: font.sansMedium, fontSize: 15, lineHeight: 20, color: color.forest[600] },
+
+  // thinking + committing
+  thinkingFigure: { width: 112, height: 200, marginBottom: 28 },
+  thinkingText: { ...text.title, fontFamily: font.serifLight, color: color.forest[600], marginTop: space.sm },
+  commitCopy: { position: "absolute", top: "28%", left: space.xl, right: space.xl, alignItems: "center" },
+  commitTitle: { ...text.display, color: color.forest[600], textAlign: "center", marginTop: space.md },
+  progressTrack: {
+    position: "absolute",
+    top: "58%",
+    left: 62,
+    right: 62,
+    height: 3,
+    borderRadius: 2,
+    backgroundColor: "rgba(28,60,28,0.12)",
+    overflow: "hidden"
+  },
+  progressFill: { height: 3, backgroundColor: color.forest[500] },
   commitFigure: { position: "absolute", width: 72, height: 128, bottom: 45, alignSelf: "center" },
-  reflectionScroll: { paddingTop: 24, paddingBottom: 170 },
-  skipButton: { alignSelf: "center", paddingVertical: 18, paddingHorizontal: 12 },
-  skipText: { color: palette.stone, fontFamily: "Avenir Next", fontSize: 13, textDecorationLine: "underline" },
+
+  // action
+  actionCard: { borderRadius: radius.card, backgroundColor: color.paper.card, padding: space.lg, marginTop: space.lg, ...elevation.lifted },
+  actionTag: { flexDirection: "row", alignItems: "center", gap: 6 },
+  actionTagText: { ...text.eyebrow, color: color.stone[500], textTransform: "uppercase" },
+  actionCopy: { ...text.bodyLg, color: color.stone[700], marginTop: space.md },
+  actionNote: { borderTopWidth: 1, borderStyle: "dashed", borderColor: color.line, paddingTop: space.sm, marginTop: space.md },
+
+  // reflection
+  reflectionScroll: { paddingTop: space.lg, paddingBottom: 120 },
+  skipButton: { alignSelf: "center", paddingVertical: space.md, paddingHorizontal: space.sm, minHeight: target.min },
+  skipText: { ...text.label, fontFamily: font.sans, color: color.stone[700], textDecorationLine: "underline" },
+
+  // growth
   growthSeed: { width: 200, height: 240 },
   growthSapling: { width: 190, height: 300 },
-  growthTitle: { color: palette.forestDark, fontFamily: "Avenir Next", fontSize: 24, fontWeight: "500", marginTop: 12 },
-  growthBody: { color: palette.stoneDark, fontFamily: "Avenir Next", fontSize: 15, lineHeight: 23, textAlign: "center", maxWidth: 300, marginTop: 12 },
-  growthButton: { position: "absolute", left: 24, right: 24, bottom: 54 },
-  tabScroll: { paddingHorizontal: 22, paddingTop: 34, paddingBottom: 108 },
-  patternTitle: { color: palette.ink, fontFamily: "Avenir Next", fontSize: 27, lineHeight: 35, fontWeight: "500", marginTop: 12, marginBottom: 22 },
-  patternAccent: { color: palette.forest },
-  insightCard: { backgroundColor: "#FFFFFF", borderRadius: 18, padding: 18, marginBottom: 14, borderWidth: 1, borderColor: "rgba(123,113,96,0.08)" },
+  growthTitle: { ...text.displayLg, color: color.forest[600], marginTop: space.sm },
+  growthBody: { ...text.bodyLg, color: color.stone[700], textAlign: "center", maxWidth: 300, marginTop: space.sm },
+  growthButton: { position: "absolute", left: space.lg, right: space.lg, bottom: 54 },
+
+  // pattern
+  tabScroll: { paddingHorizontal: space.gutter, paddingTop: space.xl, paddingBottom: 108 },
+  patternTitle: { ...text.display, color: color.stone[900], marginTop: space.sm, marginBottom: space.lg },
+  patternAccent: { color: color.forest[500] },
+  insightCard: {
+    backgroundColor: color.paper.card,
+    borderRadius: radius.group,
+    padding: space.md,
+    marginBottom: space.md,
+    ...elevation.flat
+  },
   cardHeaderRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  cardMeta: { color: palette.stone, fontFamily: "Avenir Next", fontSize: 12 },
-  weekRow: { flexDirection: "row", justifyContent: "space-between", marginVertical: 18 },
+  cardMeta: { ...text.caption, color: color.stone[500] },
+  weekRow: { flexDirection: "row", justifyContent: "space-between", marginVertical: space.md },
   dayColumn: { alignItems: "center", gap: 7 },
-  dayDot: { width: 31, height: 31, borderRadius: 16, backgroundColor: "#ECEAE5", alignItems: "center", justifyContent: "center" },
-  dayDotDone: { backgroundColor: palette.forest },
-  dayLabel: { color: palette.stone, fontFamily: "Avenir Next", fontSize: 10 },
-  tagRow: { flexDirection: "row", flexWrap: "wrap", gap: 7, marginTop: 13 },
-  tag: { backgroundColor: "#EFF2E5", borderRadius: 16, paddingHorizontal: 12, paddingVertical: 7 },
-  tagText: { color: palette.ink, fontFamily: "Avenir Next", fontSize: 12, fontWeight: "500" },
-  quote: { color: palette.stoneDark, fontFamily: "Avenir Next", fontSize: 13, fontStyle: "italic", marginTop: 18 },
-  rewardCard: { backgroundColor: "#24511F", borderRadius: 18, padding: 19 },
-  rewardEyebrow: { flexDirection: "row", alignItems: "center", gap: 8 },
-  rewardEyebrowText: { color: "#FFFFFF", fontFamily: "Avenir Next", fontSize: 10, fontWeight: "700", letterSpacing: 1.4 },
-  rewardCopy: { color: "#FFFFFF", fontFamily: "Avenir Next", fontSize: 15, lineHeight: 22, marginTop: 13 },
-  rewardButton: { alignSelf: "flex-start", marginTop: 16, height: 36, borderRadius: 18, backgroundColor: "rgba(255,255,255,0.18)", paddingHorizontal: 15, flexDirection: "row", alignItems: "center", gap: 7 },
-  rewardButtonText: { color: "#FFFFFF", fontFamily: "Avenir Next", fontSize: 12, fontWeight: "600" },
-  profileScroll: { paddingHorizontal: 22, paddingTop: 24, paddingBottom: 108, alignItems: "stretch" },
-  profileMark: { width: 76, height: 76, borderRadius: 38, backgroundColor: "#F1E8C7", alignItems: "center", justifyContent: "center", alignSelf: "center", marginTop: 4 },
+  dayDot: { width: 32, height: 32, borderRadius: 16, backgroundColor: color.paper[200], alignItems: "center", justifyContent: "center" },
+  dayDotDone: { backgroundColor: color.forest[500] },
+  dayLabel: { fontFamily: font.sans, fontSize: 11, lineHeight: 15, color: color.stone[500] },
+  tagRow: { flexDirection: "row", flexWrap: "wrap", gap: space.xs, marginTop: space.sm },
+  tag: { backgroundColor: "#EFF2E5", borderRadius: radius.pill, paddingHorizontal: space.sm, paddingVertical: 7 },
+  tagText: { ...text.caption, fontFamily: font.sansMedium, color: color.stone[900] },
+  quote: { fontFamily: font.serifItalic, fontSize: 15, lineHeight: 24, color: color.stone[700], marginTop: space.md },
+  rewardCard: { backgroundColor: "#24511F", borderRadius: radius.group, padding: space.gutter },
+  rewardEyebrow: { flexDirection: "row", alignItems: "center", gap: space.xs },
+  rewardEyebrowText: { ...text.eyebrow, color: "#FFFFFF", textTransform: "uppercase" },
+  rewardCopy: { ...text.body, color: "#FFFFFF", marginTop: space.sm },
+  rewardButton: {
+    alignSelf: "flex-start",
+    marginTop: space.md,
+    height: target.min,
+    borderRadius: radius.pill,
+    backgroundColor: "rgba(255,255,255,0.18)",
+    paddingHorizontal: space.md,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 7
+  },
+  rewardButtonText: { ...text.caption, fontFamily: font.sansSemibold, color: "#FFFFFF" },
+
+  // you
+  profileScroll: { paddingHorizontal: space.gutter, paddingTop: space.lg, paddingBottom: 108, alignItems: "stretch" },
+  profileMark: {
+    width: 76,
+    height: 76,
+    borderRadius: 38,
+    backgroundColor: "#F1E8C7",
+    alignItems: "center",
+    justifyContent: "center",
+    alignSelf: "center",
+    marginTop: space.xxs
+  },
   profileSeed: { width: 56, height: 66 },
-  profileTitle: { color: palette.ink, fontFamily: "Avenir Next", fontSize: 27, fontWeight: "500", textAlign: "center", marginTop: 12 },
-  profileSubtitle: { color: palette.stone, fontFamily: "Avenir Next", fontSize: 12, textAlign: "center", marginTop: 4, marginBottom: 22 },
-  profileCard: { backgroundColor: "#FFFFFF", borderRadius: 16, padding: 17, marginBottom: 12 },
-  settingsGroup: { backgroundColor: "#FFFFFF", borderRadius: 16, overflow: "hidden", marginBottom: 12 },
-  settingsRow: { minHeight: 54, paddingHorizontal: 17, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  profileTitle: { ...text.display, color: color.stone[900], textAlign: "center", marginTop: space.sm },
+  profileSubtitle: { ...text.caption, color: color.stone[500], textAlign: "center", marginTop: space.xxs, marginBottom: space.lg },
+  profileCard: { backgroundColor: color.paper.card, borderRadius: radius.group, padding: space.md, marginBottom: space.sm },
+  settingsGroup: { backgroundColor: color.paper.card, borderRadius: radius.group, overflow: "hidden", marginBottom: space.sm },
+  settingsRow: {
+    minHeight: 56,
+    paddingHorizontal: space.md,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between"
+  },
   settingsRowBorder: { borderBottomWidth: 1, borderBottomColor: "rgba(123,113,96,0.1)" },
-  settingsLabel: { flexDirection: "row", alignItems: "center", gap: 10 },
-  settingsLabelText: { color: palette.ink, fontFamily: "Avenir Next", fontSize: 14, fontWeight: "500" },
+  settingsLabel: { flexDirection: "row", alignItems: "center", gap: space.sm },
+  settingsLabelText: { ...text.label, fontFamily: font.sansMedium, color: color.stone[900] },
   settingsValue: { flexDirection: "row", alignItems: "center", gap: 5 },
-  settingsValueText: { color: palette.stone, fontFamily: "Avenir Next", fontSize: 12 },
-  resetButton: { paddingVertical: 14, alignItems: "center" },
-  resetText: { color: "#C6785E", fontFamily: "Avenir Next", fontSize: 12, textDecorationLine: "underline" },
-  bottomNav: { position: "absolute", left: 0, right: 0, bottom: 0, height: 96, paddingBottom: 14, borderTopWidth: 1, borderTopColor: "rgba(123,113,96,0.1)", backgroundColor: "rgba(255,253,248,0.97)", flexDirection: "row", justifyContent: "space-around", alignItems: "center" },
-  navItem: { width: 88, height: 66, alignItems: "center", justifyContent: "center", gap: 4 },
-  navLabel: { color: "#A59D90", fontFamily: "Avenir Next", fontSize: 10, fontWeight: "500" },
-  navLabelActive: { color: palette.forest, fontWeight: "700" }
+  settingsValueText: { ...text.caption, color: color.stone[500] },
+  resetButton: { paddingVertical: space.md, alignItems: "center", minHeight: target.min },
+  resetText: { ...text.caption, color: color.clay, textDecorationLine: "underline" },
+
+  // navigation
+  bottomNav: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: 96,
+    paddingBottom: 14,
+    borderTopWidth: 1,
+    borderTopColor: "rgba(123,113,96,0.1)",
+    backgroundColor: "rgba(255,253,248,0.97)",
+    flexDirection: "row",
+    justifyContent: "space-around",
+    alignItems: "center"
+  },
+  navItem: {
+    width: target.navItem.width,
+    height: 66,
+    minHeight: target.navItem.height,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: space.xxs
+  },
+  navLabel: { fontFamily: font.sansMedium, fontSize: 11, lineHeight: 15, letterSpacing: 0.3, color: color.stone[500] },
+  navLabelActive: { fontFamily: font.sansSemibold, color: color.forest[500] }
 });
