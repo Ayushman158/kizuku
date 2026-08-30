@@ -1,0 +1,288 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;1,6..72,300&amp;family=Plus+Jakarta+Sans:wght@400;500;600&amp;display=swap">
+  <style>
+    :root {
+      --paper-50: #FBF8EE;
+      --paper-100: #F4EFDF;
+      --paper-200: #ECE3CB;
+      --stone-400: #9A9080;
+      --stone-500: #7B7160;
+      --stone-700: #4D4636;
+      --stone-900: #221E16;
+      --forest-500: #2C5228;
+      --forest-600: #1C3C1C;
+      --serif: "Newsreader", Georgia, "Times New Roman", serif;
+      --sans: "Plus Jakarta Sans", "Avenir Next", system-ui, sans-serif;
+    }
+    body { margin: 0; background: #FBF8EE; font-family: var(--sans); -webkit-font-smoothing: antialiased; }
+    a { color: #2C5228; } a:hover { color: #0E2310; }
+    .sheet { padding: 56px 64px 64px; }
+    .rule { height: 1px; background: var(--paper-200); }
+    .kicker { font-size: 11px; font-weight: 600; letter-spacing: 1.6px; text-transform: uppercase; color: #7B7160; }
+    .lede { font-family: var(--serif); font-weight: 300; font-size: 21px; line-height: 32px; color: var(--stone-700); max-width: 640px; text-wrap: pretty; }
+    .section-title { font-family: var(--serif); font-weight: 300; font-size: 28px; line-height: 34px; color: var(--forest-600); margin: 0; }
+    .note { font-size: 13px; line-height: 20px; color: var(--stone-500); max-width: 340px; text-wrap: pretty; }
+    .swatch { height: 92px; border-radius: 10px; display: flex; align-items: flex-end; padding: 10px; box-sizing: border-box; }
+    .swatch-hex { font-size: 11px; font-weight: 600; letter-spacing: 0.4px; }
+    .swatch-name { font-size: 11px; color: #4D4636; margin-top: 8px; letter-spacing: 0.2px; }
+    .swatch-use { font-size: 11px; color: #7B7160; margin-top: 2px; }
+    .theme-card { border: 1px solid var(--paper-200); border-radius: 16px; overflow: hidden; background: #FFFDF8; }
+  </style>
+</helmet>
+
+<div class="sheet">
+
+  <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 40px">
+    <div style="display: flex; align-items: center; gap: 12px">
+      <img src="kizuku-mark.svg" alt="Kizuku mark" style="width: 30px; height: 30px">
+      <div style="display: flex; flex-direction: column; gap: 3px">
+        <div style="font-family: var(--serif); font-size: 24px; font-weight: 400; color: var(--forest-500); line-height: 1">kizuku</div>
+        <div class="kicker">design system</div>
+      </div>
+    </div>
+    <div style="text-align: right; display: flex; flex-direction: column; gap: 4px">
+      <div style="font-family: var(--serif); font-size: 44px; font-weight: 300; color: var(--paper-200); line-height: 1">01</div>
+      <div class="kicker" style="color: var(--stone-500)">colour</div>
+    </div>
+  </div>
+
+  <div class="rule" style="margin: 32px 0 36px"></div>
+
+  <p class="lede" style="margin: 0 0 12px">
+    Three sources already held pieces of a palette — the Figma wireframe, the web prototype's CSS variables, and the React Native build. They agreed on a spine and disagreed on everything else. This reconciles them into one set of tokens.
+  </p>
+  <p class="note" style="max-width: 640px; margin: 0">
+    Forest 500 and Forest 600 appear identically in all three sources. Everything else here is either lifted from the prototype's variable ramp or sampled from the wireframe and corrected for contrast.
+  </p>
+
+  <!-- CORE RAMPS -->
+  <div style="margin-top: 52px">
+    <div style="display: flex; align-items: baseline; justify-content: space-between">
+      <h2 class="section-title">Core</h2>
+      <div class="kicker">three ramps · sixteen steps</div>
+    </div>
+    <div class="rule" style="margin: 18px 0 28px"></div>
+
+    <!-- paper -->
+    <div style="display: grid; grid-template-columns: 168px minmax(0, 1fr); gap: 32px; align-items: start">
+      <div>
+        <div style="font-size: 15px; font-weight: 600; color: var(--stone-900)">Paper</div>
+        <div class="note" style="margin-top: 6px">Surfaces. The app is never white — it sits on warmed parchment.</div>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px">
+        <div>
+          <div class="swatch" style="background: #FFFDF8; border: 1px solid #ECE3CB"><span class="swatch-hex" style="color: #7B7160">#FFFDF8</span></div>
+          <div class="swatch-name">paper/card</div><div class="swatch-use">raised cards</div>
+        </div>
+        <div>
+          <div class="swatch" style="background: #FBF8EE"><span class="swatch-hex" style="color: #7B7160">#FBF8EE</span></div>
+          <div class="swatch-name">paper/50</div><div class="swatch-use">app ground</div>
+        </div>
+        <div>
+          <div class="swatch" style="background: #F4EFDF"><span class="swatch-hex" style="color: #7B7160">#F4EFDF</span></div>
+          <div class="swatch-name">paper/100</div><div class="swatch-use">sunken wells</div>
+        </div>
+        <div>
+          <div class="swatch" style="background: #ECE3CB"><span class="swatch-hex" style="color: #5E5548">#ECE3CB</span></div>
+          <div class="swatch-name">paper/200</div><div class="swatch-use">hairlines</div>
+        </div>
+        <div>
+          <div class="swatch" style="background: #D9CDB0"><span class="swatch-hex" style="color: #4D4636">#D9CDB0</span></div>
+          <div class="swatch-name">paper/300</div><div class="swatch-use">edges on paper</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- stone -->
+    <div style="display: grid; grid-template-columns: 168px minmax(0, 1fr); gap: 32px; align-items: start; margin-top: 34px">
+      <div>
+        <div style="font-size: 15px; font-weight: 600; color: var(--stone-900)">Stone</div>
+        <div class="note" style="margin-top: 6px">Text and quiet chrome. Warm grey, never neutral — it has to sit on parchment.</div>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px">
+        <div>
+          <div class="swatch" style="background: #B8AE9A"><span class="swatch-hex" style="color: #221E16">#B8AE9A</span></div>
+          <div class="swatch-name">stone/300</div><div class="swatch-use">disabled</div>
+        </div>
+        <div>
+          <div class="swatch" style="background: #9A9080"><span class="swatch-hex" style="color: #FBF8EE">#9A9080</span></div>
+          <div class="swatch-name">stone/400</div><div class="swatch-use">icons only · never text</div>
+        </div>
+        <div>
+          <div class="swatch" style="background: #7B7160"><span class="swatch-hex" style="color: #FBF8EE">#7B7160</span></div>
+          <div class="swatch-name">stone/500</div><div class="swatch-use">secondary · inactive nav</div>
+        </div>
+        <div>
+          <div class="swatch" style="background: #4D4636"><span class="swatch-hex" style="color: #FBF8EE">#4D4636</span></div>
+          <div class="swatch-name">stone/700</div><div class="swatch-use">body on paper</div>
+        </div>
+        <div>
+          <div class="swatch" style="background: #221E16"><span class="swatch-hex" style="color: #FBF8EE">#221E16</span></div>
+          <div class="swatch-name">stone/900</div><div class="swatch-use">ink</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- forest -->
+    <div style="display: grid; grid-template-columns: 168px minmax(0, 1fr); gap: 32px; align-items: start; margin-top: 34px">
+      <div>
+        <div style="font-size: 15px; font-weight: 600; color: var(--stone-900)">Forest</div>
+        <div class="note" style="margin-top: 6px">Brand and action. One green does the committing — 500 for every primary control.</div>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 14px">
+        <div>
+          <div class="swatch" style="background: #E9F0DD"><span class="swatch-hex" style="color: #2C5228">#E9F0DD</span></div>
+          <div class="swatch-name">forest/50</div>
+        </div>
+        <div>
+          <div class="swatch" style="background: #CCDDB4"><span class="swatch-hex" style="color: #2C5228">#CCDDB4</span></div>
+          <div class="swatch-name">forest/100</div>
+        </div>
+        <div>
+          <div class="swatch" style="background: #6F9F66"><span class="swatch-hex" style="color: #0E2310">#6F9F66</span></div>
+          <div class="swatch-name">forest/300</div>
+        </div>
+        <div>
+          <div class="swatch" style="background: #2C5228"><span class="swatch-hex" style="color: #E9F0DD">#2C5228</span></div>
+          <div class="swatch-name">forest/500</div><div class="swatch-use">primary action</div>
+        </div>
+        <div>
+          <div class="swatch" style="background: #1C3C1C"><span class="swatch-hex" style="color: #E9F0DD">#1C3C1C</span></div>
+          <div class="swatch-name">forest/600</div><div class="swatch-use">headings</div>
+        </div>
+        <div>
+          <div class="swatch" style="background: #0E2310"><span class="swatch-hex" style="color: #E9F0DD">#0E2310</span></div>
+          <div class="swatch-name">forest/700</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TYPE THEMES -->
+  <div style="margin-top: 56px">
+    <div style="display: flex; align-items: baseline; justify-content: space-between">
+      <h2 class="section-title">Type themes</h2>
+      <div class="kicker">one per person · set once at onboarding</div>
+    </div>
+    <div class="rule" style="margin: 18px 0 20px"></div>
+    <p class="note" style="max-width: 700px; margin: 0 0 26px">
+      The quiz sorts you into one of three types, and the type owns a surface colour for the rest of the product. This is the wireframe's strongest idea and the shipped build dropped it — everything ships Optimizer green. Each theme is a surface, a raised layer, an edge, and an ink. Nothing else changes: Forest stays the action colour in all three.
+    </p>
+
+    <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px">
+
+      <div class="theme-card">
+        <div style="height: 108px; background: #ECD858; display: flex; align-items: flex-end; padding: 14px">
+          <span style="font-family: var(--serif); font-size: 22px; color: #4A3800">The Optimizer</span>
+        </div>
+        <div style="display: flex">
+          <div style="flex-grow: 1; height: 34px; background: #ECD858"></div>
+          <div style="flex-grow: 1; height: 34px; background: #E1CC48"></div>
+          <div style="flex-grow: 1; height: 34px; background: #D4BE30"></div>
+          <div style="flex-grow: 1; height: 34px; background: #4A3800"></div>
+        </div>
+        <div style="padding: 16px 14px 18px; display: flex; flex-direction: column; gap: 7px">
+          <div style="display: flex; justify-content: space-between"><span class="swatch-name">surface</span><span class="swatch-hex" style="color: #4D4636">#ECD858</span></div>
+          <div style="display: flex; justify-content: space-between"><span class="swatch-name">raised</span><span class="swatch-hex" style="color: #4D4636">#E1CC48</span></div>
+          <div style="display: flex; justify-content: space-between"><span class="swatch-name">edge</span><span class="swatch-hex" style="color: #4D4636">#D4BE30</span></div>
+          <div style="display: flex; justify-content: space-between"><span class="swatch-name">ink</span><span class="swatch-hex" style="color: #4D4636">#4A3800</span></div>
+          <div style="margin-top: 8px; padding-top: 10px; border-top: 1px solid #ECE3CB; font-size: 11px; color: #2C5228; font-weight: 600">ink on surface · 7.8:1</div>
+        </div>
+      </div>
+
+      <div class="theme-card">
+        <div style="height: 108px; background: #A4C8DE; display: flex; align-items: flex-end; padding: 14px">
+          <span style="font-family: var(--serif); font-size: 22px; color: #0E2C48">The Seeker</span>
+        </div>
+        <div style="display: flex">
+          <div style="flex-grow: 1; height: 34px; background: #A4C8DE"></div>
+          <div style="flex-grow: 1; height: 34px; background: #90B6D1"></div>
+          <div style="flex-grow: 1; height: 34px; background: #7AAAC8"></div>
+          <div style="flex-grow: 1; height: 34px; background: #0E2C48"></div>
+        </div>
+        <div style="padding: 16px 14px 18px; display: flex; flex-direction: column; gap: 7px">
+          <div style="display: flex; justify-content: space-between"><span class="swatch-name">surface</span><span class="swatch-hex" style="color: #4D4636">#A4C8DE</span></div>
+          <div style="display: flex; justify-content: space-between"><span class="swatch-name">raised</span><span class="swatch-hex" style="color: #4D4636">#90B6D1</span></div>
+          <div style="display: flex; justify-content: space-between"><span class="swatch-name">edge</span><span class="swatch-hex" style="color: #4D4636">#7AAAC8</span></div>
+          <div style="display: flex; justify-content: space-between"><span class="swatch-name">ink</span><span class="swatch-hex" style="color: #4D4636">#0E2C48</span></div>
+          <div style="margin-top: 8px; padding-top: 10px; border-top: 1px solid #ECE3CB; font-size: 11px; color: #2C5228; font-weight: 600">ink on surface · 8.1:1</div>
+        </div>
+      </div>
+
+      <div class="theme-card">
+        <div style="height: 108px; background: #A4C49C; display: flex; align-items: flex-end; padding: 14px">
+          <span style="font-family: var(--serif); font-size: 22px; color: #1C3C1C">The Planner</span>
+        </div>
+        <div style="display: flex">
+          <div style="flex-grow: 1; height: 34px; background: #A4C49C"></div>
+          <div style="flex-grow: 1; height: 34px; background: #8DB186"></div>
+          <div style="flex-grow: 1; height: 34px; background: #78A06C"></div>
+          <div style="flex-grow: 1; height: 34px; background: #1C3C1C"></div>
+        </div>
+        <div style="padding: 16px 14px 18px; display: flex; flex-direction: column; gap: 7px">
+          <div style="display: flex; justify-content: space-between"><span class="swatch-name">surface</span><span class="swatch-hex" style="color: #4D4636">#A4C49C</span></div>
+          <div style="display: flex; justify-content: space-between"><span class="swatch-name">raised</span><span class="swatch-hex" style="color: #4D4636">#8DB186</span></div>
+          <div style="display: flex; justify-content: space-between"><span class="swatch-name">edge</span><span class="swatch-hex" style="color: #4D4636">#78A06C</span></div>
+          <div style="display: flex; justify-content: space-between"><span class="swatch-name">ink</span><span class="swatch-hex" style="color: #4D4636">#1C3C1C</span></div>
+          <div style="margin-top: 8px; padding-top: 10px; border-top: 1px solid #ECE3CB; font-size: 11px; color: #2C5228; font-weight: 600">ink on surface · 6.4:1 · corrected</div>
+        </div>
+      </div>
+
+    </div>
+
+    <div style="margin-top: 22px; display: flex; gap: 12px; align-items: flex-start; border-left: 2px solid #D4BE30; padding-left: 16px">
+      <p class="note" style="max-width: 760px; margin: 0">
+        The Planner's wireframe ink (#2C5828) measured 4.33:1 on its own surface — under the 4.5:1 floor for body text. It resolves to Forest 600, which is already in the core ramp, at 6.4:1. The other two themes passed as drawn.
+      </p>
+    </div>
+  </div>
+
+  <!-- GARDEN -->
+  <div style="margin-top: 52px">
+    <div style="display: flex; align-items: baseline; justify-content: space-between">
+      <h2 class="section-title">Garden</h2>
+      <div class="kicker">the ritual surfaces</div>
+    </div>
+    <div class="rule" style="margin: 18px 0 26px"></div>
+    <div style="display: grid; grid-template-columns: 168px minmax(0, 1fr); gap: 32px; align-items: start">
+      <div>
+        <div class="note">The daily loop leaves paper behind and stands on the garden. Used only between the worry and the growth.</div>
+        <div class="note" style="margin-top: 12px"><strong>One exception to memorise:</strong> Stone 500 measures 4.28:1 on garden/card, under the floor. Secondary text steps to Stone 700 on any garden surface.</div>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px">
+        <div>
+          <div class="swatch" style="background: #EDF4EA"><span class="swatch-hex" style="color: #2C5228">#EDF4EA</span></div>
+          <div class="swatch-name">garden/card</div>
+        </div>
+        <div>
+          <div class="swatch" style="background: #B8D4AC"><span class="swatch-hex" style="color: #1C3C1C">#B8D4AC</span></div>
+          <div class="swatch-name">garden/surface</div>
+        </div>
+        <div>
+          <div class="swatch" style="background: #8AB07C"><span class="swatch-hex" style="color: #0E2310">#8AB07C</span></div>
+          <div class="swatch-name">garden/mid</div>
+        </div>
+        <div>
+          <div class="swatch" style="background: #577950"><span class="swatch-hex" style="color: #EDF4EA">#577950</span></div>
+          <div class="swatch-name">garden/deep</div>
+        </div>
+        <div>
+          <div class="swatch" style="background: #C6785E"><span class="swatch-hex" style="color: #FBF8EE">#C6785E</span></div>
+          <div class="swatch-name">clay/500</div><div class="swatch-use">destructive · only</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>

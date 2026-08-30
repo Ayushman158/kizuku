@@ -1,0 +1,23 @@
+{
+  "expo": {
+    "name": "Kizuku",
+    "slug": "kizuku",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "scheme": "kizuku",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "app.kizuku.ios"
+    },
+    "android": {
+      "package": "app.kizuku.android"
+    },
+    "extra": {
+      "eas": {
+        "projectId": ""
+      }
+    }
+  }
+}
+

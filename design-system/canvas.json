@@ -1,0 +1,71 @@
+{
+  "artboards": [
+    {
+      "file": "Main.dc.html",
+      "x": 0,
+      "y": 0,
+      "w": 1120,
+      "h": 2060,
+      "title": "01 \u00b7 Colour"
+    },
+    {
+      "file": "Type.dc.html",
+      "x": 1220,
+      "y": 0,
+      "w": 1120,
+      "h": 2120,
+      "title": "02 \u00b7 Typography"
+    },
+    {
+      "file": "Space.dc.html",
+      "x": 0,
+      "y": 2260,
+      "w": 1120,
+      "h": 1860,
+      "title": "03 \u00b7 Space, form & motion"
+    },
+    {
+      "file": "Components.dc.html",
+      "x": 1220,
+      "y": 2260,
+      "w": 1120,
+      "h": 2480,
+      "title": "04 \u00b7 Components"
+    },
+    {
+      "file": "Themes.dc.html",
+      "x": 0,
+      "y": 4880,
+      "w": 1720,
+      "h": 1420,
+      "title": "05 \u00b7 Themes applied"
+    },
+    {
+      "file": "Ritual.dc.html",
+      "x": 1820,
+      "y": 4880,
+      "w": 1420,
+      "h": 2400,
+      "title": "06 \u00b7 The daily ritual"
+    }
+  ],
+  "annotations": [
+    {
+      "id": "source",
+      "x": -420,
+      "y": 40,
+      "w": 320,
+      "text": "Base: the Figma wireframe (11 frames, no variables or styles defined).\n\nThe tokens here reconcile three sources that had drifted apart \u2014 the wireframe's sampled colours, the web prototype's CSS variable ramps, and the React Native build's flat palette."
+    },
+    {
+      "id": "theming",
+      "x": -420,
+      "y": 4920,
+      "w": 320,
+      "text": "The wireframe's strongest idea: the quiz sorts you into a type, and the type owns a surface colour for the rest of the product.\n\nThe shipped build dropped it \u2014 everything ships as the Optimizer, in forest green. Restoring it costs three token values per theme."
+    }
+  ],
+  "launch": {
+    "view": "canvas"
+  }
+}

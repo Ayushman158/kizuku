@@ -1,0 +1,286 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;1,6..72,300&amp;family=Plus+Jakarta+Sans:wght@400;500;600&amp;display=swap">
+  <style>
+    :root {
+      --paper-200: #ECE3CB;
+      --stone-500: #7B7160;
+      --stone-700: #4D4636;
+      --stone-900: #221E16;
+      --forest-500: #2C5228;
+      --forest-600: #1C3C1C;
+      --serif: "Newsreader", Georgia, "Times New Roman", serif;
+      --sans: "Plus Jakarta Sans", "Avenir Next", system-ui, sans-serif;
+    }
+    body { margin: 0; background: #FBF8EE; font-family: var(--sans); -webkit-font-smoothing: antialiased; }
+    a { color: #2C5228; } a:hover { color: #0E2310; }
+    .sheet { padding: 56px 64px 64px; }
+    .rule { height: 1px; background: var(--paper-200); }
+    .kicker { font-size: 11px; font-weight: 600; letter-spacing: 1.6px; text-transform: uppercase; color: #7B7160; }
+    .lede { font-family: var(--serif); font-weight: 300; font-size: 21px; line-height: 32px; color: var(--stone-700); max-width: 720px; text-wrap: pretty; }
+    .note { font-size: 13px; line-height: 20px; color: var(--stone-500); text-wrap: pretty; }
+    .phone { width: 390px; height: 780px; border-radius: 40px; overflow: hidden; position: relative; box-shadow: 0 18px 48px rgba(28,46,20,0.14); }
+    .pad { padding: 40px 20px 28px; height: 100%; box-sizing: border-box; display: flex; flex-direction: column; }
+    .title { font-family: var(--serif); font-weight: 400; font-size: 23px; line-height: 32px; color: var(--forest-600); }
+    .eyebrow { font-size: 11px; font-weight: 600; letter-spacing: 1.6px; text-transform: uppercase; color: var(--forest-500); }
+    .cta { height: 52px; border-radius: 999px; background: #2C5228; color: #FFFFFF; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 15px; font-weight: 600; }
+    .cta-ghost { height: 52px; border-radius: 999px; border: 1px solid rgba(44,82,40,0.24); color: #1C3C1C; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 500; }
+    .icon-btn { width: 44px; height: 44px; border-radius: 22px; border: 1px solid rgba(123,113,96,0.18); background: rgba(255,255,255,0.72); display: flex; align-items: center; justify-content: center; }
+    .caption { margin-top: 16px; }
+    .caption-name { font-size: 14px; font-weight: 600; color: var(--stone-900); }
+    .caption-note { font-size: 12px; line-height: 18px; color: #7B7160; margin-top: 4px; max-width: 370px; }
+    .step { font-family: var(--serif); font-size: 13px; color: #7B7160; }
+  </style>
+</helmet>
+
+<div class="sheet">
+
+  <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 40px">
+    <div style="display: flex; align-items: center; gap: 12px">
+      <img src="kizuku-mark.svg" alt="Kizuku mark" style="width: 30px; height: 30px">
+      <div style="display: flex; flex-direction: column; gap: 3px">
+        <div style="font-family: var(--serif); font-size: 24px; font-weight: 400; color: var(--forest-500); line-height: 1">kizuku</div>
+        <div class="kicker">design system</div>
+      </div>
+    </div>
+    <div style="text-align: right; display: flex; flex-direction: column; gap: 4px">
+      <div style="font-family: var(--serif); font-size: 44px; font-weight: 300; color: var(--paper-200); line-height: 1">06</div>
+      <div class="kicker" style="color: var(--stone-500)">the daily ritual</div>
+    </div>
+  </div>
+
+  <div class="rule" style="margin: 32px 0 34px"></div>
+
+  <p class="lede" style="margin: 0 0 10px">
+    The loop the whole product exists for, built entirely from section 04. The one structural change: the tab bar leaves after the garden and comes back at the growth — six screens with nothing to tab out to.
+  </p>
+  <p class="note" style="max-width: 720px; margin: 0 0 44px">
+    In the current build the tab bar sits on every flow screen, sixteen pixels under the primary button. It is the only thing on those screens that isn't part of the ritual, and it is the easiest way out of it.
+  </p>
+
+  <div style="display: grid; grid-template-columns: repeat(3, 390px); gap: 56px 48px">
+
+    <!-- 1. GARDEN -->
+    <div>
+      <div class="phone" style="background: linear-gradient(180deg, #D3E3C6 0%, #C2D9B2 46%, #B8D4AC 100%)">
+        <div style="position: absolute; left: 0; right: 0; bottom: 0; height: 300px; background: #ADCCA0"></div>
+        <img src="optimiser-tree.png" alt="" style="position: absolute; left: 8px; top: 190px; width: 300px; height: 330px; object-fit: contain">
+        <img src="kizuku-watering-can.svg" alt="" style="position: absolute; right: 6px; top: 384px; width: 140px; height: 148px">
+        <div class="pad" style="position: relative">
+          <div style="display: flex; align-items: flex-start; justify-content: space-between">
+            <div>
+              <div style="display: flex; align-items: center; gap: 9px">
+                <img src="kizuku-mark.svg" alt="" style="width: 30px; height: 30px">
+                <span style="font-family: var(--serif); font-size: 27px; font-weight: 400; color: var(--forest-500)">kizuku</span>
+              </div>
+              <div style="font-size: 13px; color: var(--stone-700); margin-top: 5px; margin-left: 3px">day 8 · the optimiser</div>
+            </div>
+            <div class="icon-btn">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4D4636" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c0-4 3.6-6 8-6s8 2 8 6"></path></svg>
+            </div>
+          </div>
+
+          <div style="flex-grow: 1"></div>
+
+          <div style="background: rgba(255,253,248,0.92); border: 1px solid rgba(255,255,255,0.55); border-radius: 20px; padding: 18px 20px; display: flex; align-items: center; justify-content: space-between; gap: 12px; box-shadow: 0 8px 24px rgba(28,60,28,0.10)">
+            <div>
+              <div style="font-size: 19px; font-weight: 500; line-height: 26px; color: #0E2310">what's on your mind today?</div>
+              <div style="font-size: 13px; color: var(--stone-500); margin-top: 7px">share a worry and get your action</div>
+            </div>
+            <svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="#7B7160" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="M12 5l7 7-7 7"></path></svg>
+          </div>
+
+          <div style="height: 76px; margin: 20px -20px -28px; background: rgba(255,253,248,0.97); border-top: 1px solid rgba(123,113,96,0.1); display: flex; justify-content: space-around; align-items: center">
+            <div style="width: 88px; height: 44px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2C5228" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10l9-7 9 7v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"></path></svg>
+              <span style="font-size: 11px; font-weight: 600; color: #2C5228; letter-spacing: 0.3px">garden</span>
+            </div>
+            <div style="width: 88px; height: 44px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9A9080" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 20V10"></path><path d="M12 20V4"></path><path d="M18 20v-6"></path></svg>
+              <span style="font-size: 11px; font-weight: 500; color: #7B7160; letter-spacing: 0.3px">pattern</span>
+            </div>
+            <div style="width: 88px; height: 44px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9A9080" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c0-4 3.6-6 8-6s8 2 8 6"></path></svg>
+              <span style="font-size: 11px; font-weight: 500; color: #7B7160; letter-spacing: 0.3px">you</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="caption">
+        <div class="step">i</div>
+        <div class="caption-name">Garden</div>
+        <div class="caption-note">The only screen in the loop with navigation. Day count sits under the brand, where the build had nothing.</div>
+      </div>
+    </div>
+
+    <!-- 2. WORRY -->
+    <div>
+      <div class="phone" style="background: linear-gradient(180deg, #D3E3C6 0%, #C2D9B2 100%)">
+        <div class="pad">
+          <div class="icon-btn">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4D4636" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"></path><path d="M12 19l-7-7 7-7"></path></svg>
+          </div>
+          <div style="margin-top: 28px">
+            <div class="eyebrow">today</div>
+            <div class="title" style="margin-top: 9px">what future worry is on your mind right now?</div>
+          </div>
+
+          <div style="background: #FFFDF8; border: 1px solid rgba(28,60,28,0.07); border-radius: 20px; padding: 20px; margin-top: 24px; box-shadow: 0 7px 22px rgba(28,46,20,0.08)">
+            <div style="display: flex; gap: 10px; align-items: flex-start">
+              <div style="flex-grow: 1; min-height: 108px; font-size: 15px; line-height: 23px; color: var(--stone-900)">i keep worrying that i will not finish this project in time.</div>
+              <div style="width: 44px; height: 44px; border-radius: 22px; background: rgba(123,113,96,0.1); display: flex; align-items: center; justify-content: center; flex-shrink: 0">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4D4636" stroke-width="1.6" stroke-linecap="round"><path d="M12 3a3 3 0 0 1 3 3v6a3 3 0 0 1-6 0V6a3 3 0 0 1 3-3z"></path><path d="M5 11a7 7 0 0 0 14 0"></path><path d="M12 18v3"></path></svg>
+              </div>
+            </div>
+            <div style="border-top: 1px dashed rgba(94,85,72,0.15); padding-top: 12px; margin-top: 12px; font-size: 12px; line-height: 17px; color: var(--stone-500)">be specific. the more honest you are, the better your action will be.</div>
+          </div>
+
+          <div style="display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 16px">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#2C5228" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="10" rx="2"></rect><path d="M8 10V7a4 4 0 0 1 8 0v3"></path></svg>
+            <span style="font-size: 11px; font-weight: 600; color: var(--forest-500); letter-spacing: 0.4px">private · stays on this device</span>
+          </div>
+
+          <div style="flex-grow: 1"></div>
+          <div class="cta">get my action
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="M12 5l7 7-7 7"></path></svg>
+          </div>
+        </div>
+      </div>
+      <div class="caption">
+        <div class="step">ii</div>
+        <div class="caption-name">Worry</div>
+        <div class="caption-note">Tab bar gone. The button holds the bottom of the screen instead of hovering 92px above it.</div>
+      </div>
+    </div>
+
+    <!-- 3. THINKING -->
+    <div>
+      <div class="phone" style="background: linear-gradient(180deg, #E4EDDA 0%, #C8D9AC 100%)">
+        <div class="pad" style="align-items: center; justify-content: center">
+          <svg width="112" height="180" viewBox="0 0 112 180" fill="none">
+            <circle cx="56" cy="44" r="20" stroke="#1C3C1C" stroke-width="2"></circle>
+            <path d="M22 148 Q26 96 56 90 Q86 96 90 148Z" stroke="#1C3C1C" stroke-width="2" stroke-linejoin="round"></path>
+            <path d="M22 148 L90 148" stroke="#1C3C1C" stroke-width="2" stroke-linecap="round"></path>
+            <path d="M40 120 Q56 112 72 120" stroke="#577950" stroke-width="2" stroke-linecap="round"></path>
+          </svg>
+          <div style="font-family: var(--serif); font-weight: 300; font-size: 23px; line-height: 34px; color: var(--forest-600); margin-top: 34px; text-align: center">sitting with what you wrote…</div>
+          <div style="font-family: var(--serif); font-weight: 300; font-size: 23px; line-height: 34px; color: rgba(28,60,28,0.45); margin-top: 8px; text-align: center">picking one small thing…</div>
+        </div>
+      </div>
+      <div class="caption">
+        <div class="step">iii</div>
+        <div class="caption-name">Thinking</div>
+        <div class="caption-note">No chrome at all. The second line fades up at 900ms; the figure runs ambient/breath.</div>
+      </div>
+    </div>
+
+    <!-- 4. ACTION -->
+    <div>
+      <div class="phone" style="background: linear-gradient(180deg, #D3E3C6 0%, #C2D9B2 100%)">
+        <div class="pad">
+          <div class="icon-btn">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4D4636" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"></path><path d="M12 19l-7-7 7-7"></path></svg>
+          </div>
+          <div style="margin-top: 28px">
+            <div class="eyebrow">your action for today</div>
+            <div class="title" style="margin-top: 9px">one thing. right now.</div>
+          </div>
+
+          <div style="background: #FFFDF8; border-radius: 20px; padding: 24px; margin-top: 24px; box-shadow: 0 10px 28px rgba(28,46,20,0.12)">
+            <div style="display: flex; align-items: center; gap: 7px">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#7B7160" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"></path></svg>
+              <span style="font-size: 11px; font-weight: 600; letter-spacing: 1.6px; color: var(--stone-500); text-transform: uppercase">reframe</span>
+            </div>
+            <div style="font-family: var(--serif); font-size: 17px; line-height: 27px; color: var(--stone-700); margin-top: 14px">write your worry as a question. then close the notebook. the question will do its own work.</div>
+            <div style="border-top: 1px dashed rgba(94,85,72,0.15); padding-top: 13px; margin-top: 17px; font-size: 12px; line-height: 17px; color: var(--stone-500)">five minutes is enough. how well you do it doesn't matter.</div>
+          </div>
+
+          <div style="flex-grow: 1"></div>
+          <div style="display: flex; flex-direction: column; gap: 12px">
+            <div class="cta">i'll do it now
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="M12 5l7 7-7 7"></path></svg>
+            </div>
+            <div class="cta-ghost">this doesn't feel right</div>
+          </div>
+        </div>
+      </div>
+      <div class="caption">
+        <div class="step">iv</div>
+        <div class="caption-name">Action</div>
+        <div class="caption-note">The only lifted card in the product, and the only body/lg serif. It should read like something handed over.</div>
+      </div>
+    </div>
+
+    <!-- 5. REFLECTION -->
+    <div>
+      <div class="phone" style="background: linear-gradient(180deg, #D3E3C6 0%, #C2D9B2 100%)">
+        <div class="pad">
+          <div class="icon-btn">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4D4636" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"></path><path d="M12 19l-7-7 7-7"></path></svg>
+          </div>
+          <div style="margin-top: 28px">
+            <div class="eyebrow">you came back</div>
+            <div class="title" style="margin-top: 9px">what happened when you did it?</div>
+          </div>
+
+          <div style="background: #FFFDF8; border: 1px solid rgba(28,60,28,0.07); border-radius: 20px; padding: 20px; margin-top: 24px; box-shadow: 0 7px 22px rgba(28,46,20,0.08)">
+            <div style="display: flex; gap: 10px; align-items: flex-start">
+              <div style="flex-grow: 1; min-height: 96px; font-size: 15px; line-height: 23px; color: #9A9080">no judgement. just what happened.</div>
+              <div style="width: 44px; height: 44px; border-radius: 22px; background: rgba(123,113,96,0.1); display: flex; align-items: center; justify-content: center; flex-shrink: 0">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4D4636" stroke-width="1.6" stroke-linecap="round"><path d="M12 3a3 3 0 0 1 3 3v6a3 3 0 0 1-6 0V6a3 3 0 0 1 3-3z"></path><path d="M5 11a7 7 0 0 0 14 0"></path><path d="M12 18v3"></path></svg>
+              </div>
+            </div>
+            <div style="border-top: 1px dashed rgba(94,85,72,0.15); padding-top: 12px; margin-top: 12px; font-size: 12px; line-height: 17px; color: var(--stone-500)">your plant grows after you answer this.</div>
+          </div>
+
+          <div style="display: flex; justify-content: center; margin-top: 22px">
+            <span style="font-size: 13px; color: var(--stone-700); text-decoration: underline; text-underline-offset: 3px">i didn't do it — that's ok</span>
+          </div>
+
+          <div style="flex-grow: 1"></div>
+          <div class="cta">my plant is ready to grow
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="M12 5l7 7-7 7"></path></svg>
+          </div>
+        </div>
+      </div>
+      <div class="caption">
+        <div class="step">v</div>
+        <div class="caption-name">Reflection</div>
+        <div class="caption-note">The skip is stone/700 rather than stone/500 — the kind exit shouldn't also be the faintest thing on screen.</div>
+      </div>
+    </div>
+
+    <!-- 6. GROWTH -->
+    <div>
+      <div class="phone" style="background: linear-gradient(180deg, #F0F4E6 0%, #DDDCA5 100%)">
+        <div class="pad" style="align-items: center">
+          <div style="flex-grow: 1"></div>
+          <img src="optimiser-tree.png" alt="" style="width: 250px; height: 275px; object-fit: contain">
+          <div style="font-family: var(--serif); font-weight: 300; font-size: 34px; line-height: 42px; color: var(--forest-600); margin-top: 20px">something grew.</div>
+          <div style="font-family: var(--serif); font-size: 17px; line-height: 27px; color: var(--stone-700); text-align: center; max-width: 290px; margin-top: 10px">your garden now holds eight moments of showing up.</div>
+          <div style="flex-grow: 1"></div>
+          <div class="cta" style="width: 100%; box-sizing: border-box">see my garden
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="M12 5l7 7-7 7"></path></svg>
+          </div>
+        </div>
+      </div>
+      <div class="caption">
+        <div class="step">vi</div>
+        <div class="caption-name">Growth</div>
+        <div class="caption-note">display/lg appears exactly once in the product, here. Counting moments, not days — the brief rules out streaks.</div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>
