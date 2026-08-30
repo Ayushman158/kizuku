@@ -63,9 +63,9 @@ export const font = {
   serifLight: "Newsreader_300Light",
   serif: "Newsreader_400Regular",
   serifItalic: "Newsreader_300Light_Italic",
-  sans: "PlusJakartaSans_400Regular",
-  sansMedium: "PlusJakartaSans_500Medium",
-  sansSemibold: "PlusJakartaSans_600SemiBold"
+  sans: "HankenGrotesk_400Regular",
+  sansMedium: "HankenGrotesk_500Medium",
+  sansSemibold: "HankenGrotesk_600SemiBold"
 } as const;
 
 /** Nine steps, each with one job. 11 is the floor. */

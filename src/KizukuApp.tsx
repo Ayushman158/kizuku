@@ -712,7 +712,7 @@ function PatternsScreen({ actionsDone, onTab }: { actionsDone: number; onTab: (t
         <View style={styles.rewardCard}>
           <View style={styles.rewardEyebrow}>
             <Ionicons name="gift-outline" size={14} color="#FFFFFF" />
-            <Text style={styles.rewardEyebrowText}>SOMETHING WAITING</Text>
+            <Text style={styles.rewardEyebrowText}>something waiting</Text>
           </View>
           <Text style={styles.rewardCopy}>after thirty days of noticing, kizuku sends a small real plant to your door.</Text>
           <View style={styles.rewardButton}><Text style={styles.rewardButtonText}>preview the gift</Text><Ionicons name="arrow-forward" size={14} color="#FFFFFF" /></View>
@@ -948,7 +948,7 @@ const styles = StyleSheet.create({
   // ritual flow — no tab bar, so the action sits a gutter off the bottom
   flowContent: { flex: 1, paddingHorizontal: space.gutter, paddingTop: space.md, paddingBottom: space.lg },
   flowHeading: { marginTop: space.lg },
-  eyebrow: { ...text.eyebrow, color: color.forest[500], textTransform: "uppercase" },
+  eyebrow: { ...text.eyebrow, color: color.forest[500] },
   flowTitle: { ...text.title, color: color.forest[600], marginTop: space.xs },
   inputCard: {
     minHeight: 194,
@@ -1024,7 +1024,7 @@ const styles = StyleSheet.create({
   // action
   actionCard: { borderRadius: radius.card, backgroundColor: color.paper.card, padding: space.lg, marginTop: space.lg, ...elevation.lifted },
   actionTag: { flexDirection: "row", alignItems: "center", gap: 6 },
-  actionTagText: { ...text.eyebrow, color: color.stone[500], textTransform: "uppercase" },
+  actionTagText: { ...text.eyebrow, color: color.stone[500] },
   actionCopy: { ...text.bodyLg, color: color.stone[700], marginTop: space.md },
   actionNote: { borderTopWidth: 1, borderStyle: "dashed", borderColor: color.line, paddingTop: space.sm, marginTop: space.md },
 
@@ -1064,7 +1064,7 @@ const styles = StyleSheet.create({
   quote: { fontFamily: font.serifItalic, fontSize: 15, lineHeight: 24, color: color.stone[700], marginTop: space.md },
   rewardCard: { backgroundColor: "#24511F", borderRadius: radius.group, padding: space.gutter },
   rewardEyebrow: { flexDirection: "row", alignItems: "center", gap: space.xs },
-  rewardEyebrowText: { ...text.eyebrow, color: "#FFFFFF", textTransform: "uppercase" },
+  rewardEyebrowText: { ...text.eyebrow, color: "#FFFFFF" },
   rewardCopy: { ...text.body, color: "#FFFFFF", marginTop: space.sm },
   rewardButton: {
     alignSelf: "flex-start",

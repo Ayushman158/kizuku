@@ -7,10 +7,10 @@ import {
   Newsreader_400Regular
 } from "@expo-google-fonts/newsreader";
 import {
-  PlusJakartaSans_400Regular,
-  PlusJakartaSans_500Medium,
-  PlusJakartaSans_600SemiBold
-} from "@expo-google-fonts/plus-jakarta-sans";
+  HankenGrotesk_400Regular,
+  HankenGrotesk_500Medium,
+  HankenGrotesk_600SemiBold
+} from "@expo-google-fonts/hanken-grotesk";
 import { KizukuApp } from "./src/KizukuApp";
 import { color } from "./src/tokens";
 
@@ -19,9 +19,9 @@ export default function App() {
     Newsreader_300Light,
     Newsreader_300Light_Italic,
     Newsreader_400Regular,
-    PlusJakartaSans_400Regular,
-    PlusJakartaSans_500Medium,
-    PlusJakartaSans_600SemiBold
+    HankenGrotesk_400Regular,
+    HankenGrotesk_500Medium,
+    HankenGrotesk_600SemiBold
   });
 
   if (!fontsLoaded) {
