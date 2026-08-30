@@ -17,7 +17,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import { actionTemplates } from "./productModel";
+import { actionTemplates, personalityTypes, stageFor } from "./productModel";
 import { color, elevation, font, motion, radius, space, target, text } from "./tokens";
 import KizukuMark from "../assets/kizuku-mark.svg";
 import MeditatingFigure from "../assets/kizuku-meditating.svg";
@@ -62,6 +62,7 @@ export function KizukuApp() {
   const [actionsDone, setActionsDone] = useState(0);
   const [todayCompleted, setTodayCompleted] = useState(false);
   const [actionIndex, setActionIndex] = useState(0);
+  const [history, setHistory] = useState<string[]>([]);
 
   const action = actionTemplates[actionIndex % actionTemplates.length]!;
 
@@ -75,6 +76,7 @@ export function KizukuApp() {
 
   const completeReflection = () => {
     setActionsDone((count) => count + 1);
+    setHistory((tags) => [...tags, action.tag]);
     setTodayCompleted(true);
     setScreen("growth");
   };
@@ -146,7 +148,7 @@ export function KizukuApp() {
           ) : null}
 
           {screen === "patterns" ? (
-            <PatternsScreen actionsDone={actionsDone} onTab={openTab} />
+            <PatternsScreen actionsDone={actionsDone} history={history} onTab={openTab} />
           ) : null}
 
           {screen === "profile" ? (
@@ -157,6 +159,7 @@ export function KizukuApp() {
                 setWorry("");
                 setReflection("");
                 setActionsDone(0);
+                setHistory([]);
                 setTodayCompleted(false);
                 setScreen("home");
               }}
@@ -182,6 +185,7 @@ function HomeScreen({
   onProfile: () => void;
 }) {
   const reduceMotion = useReduceMotionPreference();
+  const stage = stageFor(actionsDone);
   const landscapeDrift = useRef(new Animated.Value(0)).current;
   const treeBreath = useRef(new Animated.Value(0)).current;
   const treeResponse = useRef(new Animated.Value(0)).current;
@@ -314,16 +318,16 @@ function HomeScreen({
 
       <Animated.View
         style={[
-          styles.heroTree,
+          heroStageStyle[stage],
           { transform: [{ scale: treeScale }, { scale: treeReactionScale }] }
         ]}
       >
-        <Image source={assets.tree} resizeMode="contain" style={styles.heroTreeImage} />
+        <Image source={assets[stage]} resizeMode="contain" style={styles.heroTreeImage} />
       </Animated.View>
 
       <Animated.View
         accessibilityHint="Drag it toward the tree"
-        accessibilityLabel={`Water the optimiser tree. ${actionsDone} actions noticed.`}
+        accessibilityLabel={`Water your ${stage}. ${actionsDone} actions noticed.`}
         style={[
           styles.heroWateringCan,
           {
@@ -645,6 +649,8 @@ function ReflectionScreen({
 
 function GrowthScreen({ actionsDone, onDone }: { actionsDone: number; onDone: () => void }) {
   const [grown, setGrown] = useState(false);
+  const previous = stageFor(actionsDone - 1);
+  const current = stageFor(actionsDone);
 
   useEffect(() => {
     const timer = setTimeout(() => setGrown(true), 1100);
@@ -653,11 +659,7 @@ function GrowthScreen({ actionsDone, onDone }: { actionsDone: number; onDone: ()
 
   return (
     <LinearGradient colors={["#F0F4E6", "#DDDCA5"]} style={[styles.flex, styles.center]}>
-      <Image
-        source={grown ? assets.sapling : assets.seed}
-        resizeMode="contain"
-        style={grown ? styles.growthSapling : styles.growthSeed}
-      />
+      <Image source={assets[grown ? current : previous]} resizeMode="contain" style={styles.growthPlant} />
       <Text style={styles.growthTitle}>{grown ? "something grew." : "planting…"}</Text>
       {grown ? (
         <>
@@ -673,50 +675,80 @@ function GrowthScreen({ actionsDone, onDone }: { actionsDone: number; onDone: ()
   );
 }
 
-function PatternsScreen({ actionsDone, onTab }: { actionsDone: number; onTab: (tab: MainTab) => void }) {
-  const completedDays = Math.min(actionsDone, 4);
+function PatternsScreen({
+  actionsDone,
+  history,
+  onTab
+}: {
+  actionsDone: number;
+  history: string[];
+  onTab: (tab: MainTab) => void;
+}) {
+  const type = personalityTypes.optimizer;
+  const counts = new Map<string, number>();
+  history.forEach((tag) => counts.set(tag, (counts.get(tag) ?? 0) + 1));
+  const ranked = [...counts.entries()].sort((a, b) => b[1] - a[1]);
+  const most = ranked.length > 0 ? Math.max(...ranked.map(([, count]) => count)) : 1;
+
   return (
     <View style={[styles.flex, styles.paperScreen]}>
       <ScrollView contentContainerStyle={styles.tabScroll} showsVerticalScrollIndicator={false}>
         <Eyebrow>your pattern</Eyebrow>
-        <Text style={styles.patternTitle}>you turn worry into plans.{"\n"}<Text style={styles.patternAccent}>step by step.</Text></Text>
 
-        <View style={styles.insightCard}>
-          <View style={styles.cardHeaderRow}>
-            <Eyebrow>days you showed up</Eyebrow>
-            <Text style={styles.cardMeta}>last 7 days</Text>
-          </View>
-          <View style={styles.weekRow}>
-            {["m", "t", "w", "t", "f", "s", "s"].map((day, index) => (
-              <View key={`${day}-${index}`} style={styles.dayColumn}>
-                <View style={[styles.dayDot, index < completedDays && styles.dayDotDone]}>
-                  {index < completedDays ? <Ionicons name="checkmark" size={13} color="#FFFFFF" /> : null}
+        {actionsDone === 0 ? (
+          <>
+            <Text style={styles.patternTitle}>nothing to notice yet.</Text>
+            <View style={styles.insightCard}>
+              <Text style={styles.emptyBody}>
+                your pattern shows up here after your first action. there is nothing to catch up on and nothing
+                to miss.
+              </Text>
+            </View>
+          </>
+        ) : (
+          <>
+            <Text style={styles.patternTitle}>
+              you turn worry into plans.{"\n"}
+              <Text style={styles.patternAccent}>step by step.</Text>
+            </Text>
+
+            <View style={styles.insightCard}>
+              <Eyebrow>moments of showing up</Eyebrow>
+              <Text style={styles.momentCount}>{actionsDone}</Text>
+              <Text style={styles.cardMeta}>no calendar, no streak. this number only ever goes up.</Text>
+            </View>
+
+            {ranked.length > 0 ? (
+              <View style={styles.insightCard}>
+                <Eyebrow>what has helped you</Eyebrow>
+                <View style={styles.rankList}>
+                  {ranked.map(([tag, count]) => (
+                    <View key={tag} style={styles.rankRow}>
+                      <Text style={styles.rankTag}>{tag}</Text>
+                      <View style={styles.rankTrack}>
+                        <View style={[styles.rankFill, { width: `${(count / most) * 100}%` }]} />
+                      </View>
+                      <Text style={styles.rankCount}>{count}</Text>
+                    </View>
+                  ))}
                 </View>
-                <Text style={styles.dayLabel}>{day}</Text>
+                <Text style={styles.cardMeta}>drawn from the actions you finished, not from what you wrote.</Text>
               </View>
-            ))}
-          </View>
-          <Text style={styles.cardMeta}>no streaks. just notice.</Text>
-        </View>
+            ) : null}
 
-        <View style={styles.insightCard}>
-          <Eyebrow>traits seen most</Eyebrow>
-          <View style={styles.tagRow}>
-            {["curious", "adaptive", "forward-leaning"].map((tag) => (
-              <View key={tag} style={styles.tag}><Text style={styles.tagText}>{tag}</Text></View>
-            ))}
-          </View>
-          <Text style={styles.quote}>“every worry is a question waiting to be heard.”</Text>
-        </View>
-
-        <View style={styles.rewardCard}>
-          <View style={styles.rewardEyebrow}>
-            <Ionicons name="gift-outline" size={14} color="#FFFFFF" />
-            <Text style={styles.rewardEyebrowText}>something waiting</Text>
-          </View>
-          <Text style={styles.rewardCopy}>after thirty days of noticing, kizuku sends a small real plant to your door.</Text>
-          <View style={styles.rewardButton}><Text style={styles.rewardButtonText}>preview the gift</Text><Ionicons name="arrow-forward" size={14} color="#FFFFFF" /></View>
-        </View>
+            <View style={styles.insightCard}>
+              <Eyebrow>{type.name}</Eyebrow>
+              <View style={styles.tagRow}>
+                {type.traits.map((trait) => (
+                  <View key={trait} style={styles.tag}>
+                    <Text style={styles.tagText}>{trait}</Text>
+                  </View>
+                ))}
+              </View>
+              <Text style={styles.quote}>“every worry is a question waiting to be heard.”</Text>
+            </View>
+          </>
+        )}
       </ScrollView>
       <BottomNav active="patterns" onSelect={onTab} />
     </View>
@@ -732,6 +764,8 @@ function ProfileScreen({
   onTab: (tab: MainTab) => void;
   onReset: () => void;
 }) {
+  const type = personalityTypes.optimizer;
+  const stage = stageFor(actionsDone);
   const rows: Array<{ icon: keyof typeof Ionicons.glyphMap; label: string; value: string }> = [
     { icon: "moon-outline", label: "notifications", value: "gentle · 1x/day" },
     { icon: "eye-outline", label: "theme", value: "forest" },
@@ -742,18 +776,16 @@ function ProfileScreen({
     <View style={[styles.flex, styles.paperScreen]}>
       <ScrollView contentContainerStyle={styles.profileScroll} showsVerticalScrollIndicator={false}>
         <View style={styles.profileMark}>
-          <Image source={assets.seed} resizeMode="contain" style={styles.profileSeed} />
+          <Image source={assets[stage]} resizeMode="contain" style={styles.profileSeed} />
         </View>
-        <Text style={styles.profileTitle}>the optimiser</Text>
-        <Text style={styles.profileSubtitle}>{actionsDone} small {actionsDone === 1 ? "action" : "actions"} noticed</Text>
+        <Text style={styles.profileTitle}>{type.name}</Text>
+        <Text style={styles.profileSubtitle}>
+          {actionsDone} small {actionsDone === 1 ? "action" : "actions"} noticed
+        </Text>
 
         <View style={styles.profileCard}>
-          <Eyebrow>things you carry</Eyebrow>
-          <View style={styles.tagRow}>
-            {["journal", "constant", "novel", "saved articles"].map((tag) => (
-              <View key={tag} style={styles.tag}><Text style={styles.tagText}>{tag}</Text></View>
-            ))}
-          </View>
+          <Text style={styles.profileQuote}>“{type.quote}”</Text>
+          <Text style={styles.profilePattern}>{type.pattern}</Text>
         </View>
 
         <View style={styles.settingsGroup}>
@@ -772,7 +804,9 @@ function ProfileScreen({
         </View>
 
         <SecondaryButton label="retake personality quiz" icon="refresh-outline" onPress={() => {}} />
-        <Pressable onPress={onReset} style={styles.resetButton}><Text style={styles.resetText}>reset prototype</Text></Pressable>
+        <Pressable onPress={onReset} style={styles.resetButton}>
+          <Text style={styles.resetText}>reset prototype</Text>
+        </Pressable>
       </ScrollView>
       <BottomNav active="profile" onSelect={onTab} />
     </View>
@@ -918,6 +952,8 @@ const styles = StyleSheet.create({
     justifyContent: "center"
   },
   heroTree: { position: "absolute", top: 205, left: -2, width: 326, height: 360, transformOrigin: "center bottom" },
+  heroSapling: { position: "absolute", top: 300, left: 52, width: 210, height: 265, transformOrigin: "center bottom" },
+  heroSeed: { position: "absolute", top: 402, left: 96, width: 124, height: 163, transformOrigin: "center bottom" },
   heroTreeImage: { width: "100%", height: "100%" },
   heroWateringCan: { position: "absolute", top: 420, right: 0, width: 154, height: 162, zIndex: 2 },
   homeCardMotion: { position: "absolute", left: space.gutter, right: space.gutter, bottom: 146 },
@@ -1034,8 +1070,7 @@ const styles = StyleSheet.create({
   skipText: { ...text.label, fontFamily: font.sans, color: color.stone[700], textDecorationLine: "underline" },
 
   // growth
-  growthSeed: { width: 200, height: 240 },
-  growthSapling: { width: 190, height: 300 },
+  growthPlant: { width: 244, height: 300 },
   growthTitle: { ...text.displayLg, color: color.forest[600], marginTop: space.sm },
   growthBody: { ...text.bodyLg, color: color.stone[700], textAlign: "center", maxWidth: 300, marginTop: space.sm },
   growthButton: { position: "absolute", left: space.lg, right: space.lg, bottom: 54 },
@@ -1044,6 +1079,14 @@ const styles = StyleSheet.create({
   tabScroll: { paddingHorizontal: space.gutter, paddingTop: space.xl, paddingBottom: 108 },
   patternTitle: { ...text.display, color: color.stone[900], marginTop: space.sm, marginBottom: space.lg },
   patternAccent: { color: color.forest[500] },
+  emptyBody: { ...text.bodyLg, color: color.stone[700] },
+  momentCount: { ...text.displayLg, fontSize: 44, lineHeight: 52, color: color.forest[500], marginTop: space.xs, marginBottom: space.xs },
+  rankList: { gap: space.sm, marginTop: space.sm, marginBottom: space.md },
+  rankRow: { flexDirection: "row", alignItems: "center", gap: space.sm },
+  rankTag: { ...text.caption, color: color.stone[700], width: 92 },
+  rankTrack: { flex: 1, height: 6, borderRadius: 3, backgroundColor: color.paper[200], overflow: "hidden" },
+  rankFill: { height: 6, borderRadius: 3, backgroundColor: color.forest[300] },
+  rankCount: { ...text.caption, color: color.stone[500], width: 16, textAlign: "right" },
   insightCard: {
     backgroundColor: color.paper.card,
     borderRadius: radius.group,
@@ -1051,33 +1094,11 @@ const styles = StyleSheet.create({
     marginBottom: space.md,
     ...elevation.flat
   },
-  cardHeaderRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   cardMeta: { ...text.caption, color: color.stone[500] },
-  weekRow: { flexDirection: "row", justifyContent: "space-between", marginVertical: space.md },
-  dayColumn: { alignItems: "center", gap: 7 },
-  dayDot: { width: 32, height: 32, borderRadius: 16, backgroundColor: color.paper[200], alignItems: "center", justifyContent: "center" },
-  dayDotDone: { backgroundColor: color.forest[500] },
-  dayLabel: { fontFamily: font.sans, fontSize: 11, lineHeight: 15, color: color.stone[500] },
   tagRow: { flexDirection: "row", flexWrap: "wrap", gap: space.xs, marginTop: space.sm },
   tag: { backgroundColor: "#EFF2E5", borderRadius: radius.pill, paddingHorizontal: space.sm, paddingVertical: 7 },
   tagText: { ...text.caption, fontFamily: font.sansMedium, color: color.stone[900] },
   quote: { fontFamily: font.serifItalic, fontSize: 15, lineHeight: 24, color: color.stone[700], marginTop: space.md },
-  rewardCard: { backgroundColor: "#24511F", borderRadius: radius.group, padding: space.gutter },
-  rewardEyebrow: { flexDirection: "row", alignItems: "center", gap: space.xs },
-  rewardEyebrowText: { ...text.eyebrow, color: "#FFFFFF" },
-  rewardCopy: { ...text.body, color: "#FFFFFF", marginTop: space.sm },
-  rewardButton: {
-    alignSelf: "flex-start",
-    marginTop: space.md,
-    height: target.min,
-    borderRadius: radius.pill,
-    backgroundColor: "rgba(255,255,255,0.18)",
-    paddingHorizontal: space.md,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 7
-  },
-  rewardButtonText: { ...text.caption, fontFamily: font.sansSemibold, color: "#FFFFFF" },
 
   // you
   profileScroll: { paddingHorizontal: space.gutter, paddingTop: space.lg, paddingBottom: 108, alignItems: "stretch" },
@@ -1094,6 +1115,8 @@ const styles = StyleSheet.create({
   profileSeed: { width: 56, height: 66 },
   profileTitle: { ...text.display, color: color.stone[900], textAlign: "center", marginTop: space.sm },
   profileSubtitle: { ...text.caption, color: color.stone[500], textAlign: "center", marginTop: space.xxs, marginBottom: space.lg },
+  profileQuote: { ...text.bodyLg, color: color.forest[600] },
+  profilePattern: { ...text.caption, color: color.stone[500], marginTop: space.sm },
   profileCard: { backgroundColor: color.paper.card, borderRadius: radius.group, padding: space.md, marginBottom: space.sm },
   settingsGroup: { backgroundColor: color.paper.card, borderRadius: radius.group, overflow: "hidden", marginBottom: space.sm },
   settingsRow: {
@@ -1137,3 +1160,9 @@ const styles = StyleSheet.create({
   navLabel: { fontFamily: font.sansMedium, fontSize: 11, lineHeight: 15, letterSpacing: 0.3, color: color.stone[500] },
   navLabelActive: { fontFamily: font.sansSemibold, color: color.forest[500] }
 });
+
+const heroStageStyle = {
+  seed: styles.heroSeed,
+  sapling: styles.heroSapling,
+  tree: styles.heroTree
+} as const;
