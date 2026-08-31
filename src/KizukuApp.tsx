@@ -17,13 +17,25 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import { actionTemplates, personalityTypes, stageFor } from "./productModel";
+import {
+  actionTemplates,
+  personalityTypes,
+  quiz,
+  stageFor,
+  typeFrom,
+  type PersonalityType
+} from "./productModel";
+import { themes } from "./tokens";
 import { color, elevation, font, motion, radius, space, target, text } from "./tokens";
+import Svg, { Circle, Path } from "react-native-svg";
 import KizukuMark from "../assets/kizuku-mark.svg";
 import MeditatingFigure from "../assets/kizuku-meditating.svg";
 import WateringCan from "../assets/kizuku-watering-can.svg";
 
 type Screen =
+  | "welcome"
+  | "quiz"
+  | "reveal"
   | "home"
   | "worry"
   | "thinking"
@@ -56,7 +68,9 @@ function useReduceMotionPreference() {
 }
 
 export function KizukuApp() {
-  const [screen, setScreen] = useState<Screen>("home");
+  const [screen, setScreen] = useState<Screen>("welcome");
+  const [personality, setPersonality] = useState<PersonalityType>("optimizer");
+  const [answers, setAnswers] = useState<PersonalityType[]>([]);
   const [worry, setWorry] = useState("");
   const [reflection, setReflection] = useState("");
   const [actionsDone, setActionsDone] = useState(0);
@@ -74,6 +88,17 @@ export function KizukuApp() {
 
   const openTab = (tab: MainTab) => setScreen(tab);
 
+  const startQuiz = () => {
+    setAnswers([]);
+    setScreen("quiz");
+  };
+
+  const finishQuiz = (given: PersonalityType[]) => {
+    setAnswers(given);
+    setPersonality(typeFrom(given));
+    setScreen("reveal");
+  };
+
   const completeReflection = () => {
     setActionsDone((count) => count + 1);
     setHistory((tags) => [...tags, action.tag]);
@@ -88,8 +113,19 @@ export function KizukuApp() {
           behavior={Platform.OS === "ios" ? "padding" : undefined}
           style={styles.flex}
         >
+          {screen === "welcome" ? <WelcomeScreen onBegin={startQuiz} /> : null}
+
+          {screen === "quiz" ? (
+            <QuizScreen onDone={finishQuiz} onBack={() => setScreen("welcome")} />
+          ) : null}
+
+          {screen === "reveal" ? (
+            <RevealScreen personality={personality} onDone={() => setScreen("home")} />
+          ) : null}
+
           {screen === "home" ? (
             <HomeScreen
+              personality={personality}
               actionsDone={actionsDone}
               todayCompleted={todayCompleted}
               onStart={() => {
@@ -148,12 +184,19 @@ export function KizukuApp() {
           ) : null}
 
           {screen === "patterns" ? (
-            <PatternsScreen actionsDone={actionsDone} history={history} onTab={openTab} />
+            <PatternsScreen
+              personality={personality}
+              actionsDone={actionsDone}
+              history={history}
+              onTab={openTab}
+            />
           ) : null}
 
           {screen === "profile" ? (
             <ProfileScreen
+              personality={personality}
               actionsDone={actionsDone}
+              onRetake={startQuiz}
               onTab={openTab}
               onReset={() => {
                 setWorry("");
@@ -172,12 +215,14 @@ export function KizukuApp() {
 }
 
 function HomeScreen({
+  personality,
   actionsDone,
   todayCompleted,
   onStart,
   onTab,
   onProfile
 }: {
+  personality: PersonalityType;
   actionsDone: number;
   todayCompleted: boolean;
   onStart: () => void;
@@ -311,7 +356,7 @@ function HomeScreen({
             <KizukuMark width={34} height={34} />
             <Text style={styles.brandName}>kizuku</Text>
           </View>
-          <Text style={styles.homeTitle}>the optimiser</Text>
+          <Text style={styles.homeTitle}>{personalityTypes[personality].name}</Text>
         </View>
         <IconButton icon="person-outline" label="Open profile" onPress={onProfile} />
       </View>
@@ -676,15 +721,17 @@ function GrowthScreen({ actionsDone, onDone }: { actionsDone: number; onDone: ()
 }
 
 function PatternsScreen({
+  personality,
   actionsDone,
   history,
   onTab
 }: {
+  personality: PersonalityType;
   actionsDone: number;
   history: string[];
   onTab: (tab: MainTab) => void;
 }) {
-  const type = personalityTypes.optimizer;
+  const type = personalityTypes[personality];
   const counts = new Map<string, number>();
   history.forEach((tag) => counts.set(tag, (counts.get(tag) ?? 0) + 1));
   const ranked = [...counts.entries()].sort((a, b) => b[1] - a[1]);
@@ -756,15 +803,19 @@ function PatternsScreen({
 }
 
 function ProfileScreen({
+  personality,
   actionsDone,
+  onRetake,
   onTab,
   onReset
 }: {
+  personality: PersonalityType;
   actionsDone: number;
+  onRetake: () => void;
   onTab: (tab: MainTab) => void;
   onReset: () => void;
 }) {
-  const type = personalityTypes.optimizer;
+  const type = personalityTypes[personality];
   const stage = stageFor(actionsDone);
   const rows: Array<{ icon: keyof typeof Ionicons.glyphMap; label: string; value: string }> = [
     { icon: "moon-outline", label: "notifications", value: "gentle · 1x/day" },
@@ -803,12 +854,178 @@ function ProfileScreen({
           ))}
         </View>
 
-        <SecondaryButton label="retake personality quiz" icon="refresh-outline" onPress={() => {}} />
+        <SecondaryButton label="retake personality quiz" icon="refresh-outline" onPress={onRetake} />
         <Pressable onPress={onReset} style={styles.resetButton}>
           <Text style={styles.resetText}>reset prototype</Text>
         </Pressable>
       </ScrollView>
       <BottomNav active="profile" onSelect={onTab} />
+    </View>
+  );
+}
+
+function TypeEmblem({ personality, ink, edge }: { personality: PersonalityType; ink: string; edge: string }) {
+  if (personality === "seeker") {
+    return (
+      <Svg width="100%" height="100%" viewBox="0 0 130 130">
+        <Path d="M40 88 Q34 52 65 42 Q98 33 96 68 Q94 100 66 100 Q46 100 40 88Z" stroke={ink} strokeWidth={2} fill="none" strokeLinejoin="round" />
+        <Circle cx={65} cy={66} r={13} stroke={edge} strokeWidth={2} fill="none" />
+        <Path d="M65 24 L65 40" stroke={ink} strokeWidth={2} strokeLinecap="round" />
+      </Svg>
+    );
+  }
+
+  if (personality === "planner") {
+    return (
+      <Svg width="100%" height="100%" viewBox="0 0 130 130">
+        <Path d="M65 26 L65 104" stroke={ink} strokeWidth={2} strokeLinecap="round" />
+        <Path d="M65 52 Q40 44 34 62 Q56 70 65 60" stroke={ink} strokeWidth={2} fill="none" strokeLinejoin="round" />
+        <Path d="M65 74 Q90 66 96 84 Q74 92 65 82" stroke={edge} strokeWidth={2} fill="none" strokeLinejoin="round" />
+        <Circle cx={65} cy={26} r={6} stroke={ink} strokeWidth={2} fill="none" />
+      </Svg>
+    );
+  }
+
+  return (
+    <Svg width="100%" height="100%" viewBox="0 0 130 130">
+      <Circle cx={58} cy={72} r={34} stroke={ink} strokeWidth={2} fill="none" />
+      <Path d="M92 20 L92 62" stroke={ink} strokeWidth={2} strokeLinecap="round" />
+      <Path d="M74 38 L92 20 L110 38" stroke={ink} strokeWidth={2} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+      <Path d="M30 96 Q58 78 88 96" stroke={edge} strokeWidth={2} fill="none" strokeLinecap="round" />
+    </Svg>
+  );
+}
+
+function WelcomeScreen({ onBegin }: { onBegin: () => void }) {
+  return (
+    <View style={[styles.flex, styles.paperScreen]}>
+      <View style={styles.welcomeContent}>
+        <View style={styles.brandRow}>
+          <KizukuMark width={34} height={34} />
+          <Text style={styles.brandName}>kizuku</Text>
+        </View>
+        <Text style={styles.welcomeQuote}>
+          you cannot plan a forest.{"\n"}you can only plant a tree.
+        </Text>
+        <Text style={styles.welcomeBody}>
+          one action a day, based on what's worrying you. a garden that grows each time you act.
+        </Text>
+      </View>
+      <View style={styles.welcomeAction}>
+        <PrimaryButton label="begin" onPress={onBegin} />
+        <Text style={styles.welcomeNote}>no account needed · takes 60 seconds</Text>
+      </View>
+    </View>
+  );
+}
+
+function QuizScreen({
+  onDone,
+  onBack
+}: {
+  onDone: (answers: PersonalityType[]) => void;
+  onBack: () => void;
+}) {
+  const [index, setIndex] = useState(0);
+  const [answers, setAnswers] = useState<PersonalityType[]>([]);
+  const question = quiz[index]!;
+  const selected = answers[index];
+  const last = index === quiz.length - 1;
+
+  const choose = (type: PersonalityType) =>
+    setAnswers((current) => {
+      const next = [...current];
+      next[index] = type;
+      return next;
+    });
+
+  const advance = () => {
+    if (!selected) return;
+    if (last) onDone(answers);
+    else setIndex(index + 1);
+  };
+
+  return (
+    <View style={[styles.flex, styles.paperScreen]}>
+      <View style={styles.flowContent}>
+        <BackButton onPress={() => (index === 0 ? onBack() : setIndex(index - 1))} />
+
+        <View style={styles.quizHead}>
+          <View style={styles.progressDots}>
+            {quiz.map((_, dot) => (
+              <View key={dot} style={[styles.progressDot, dot === index && styles.progressDotActive]} />
+            ))}
+          </View>
+          <Text style={styles.cardMeta}>
+            {index + 1} of {quiz.length}
+          </Text>
+        </View>
+
+        <Text style={styles.flowTitle}>{question.prompt}</Text>
+
+        <View style={styles.optionList}>
+          {question.options.map((option) => {
+            const active = selected === option.type;
+            return (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityState={{ selected: active }}
+                key={option.type}
+                onPress={() => choose(option.type)}
+                style={({ pressed }) => [styles.option, active && styles.optionSelected, pressed && styles.pressed]}
+              >
+                <Text style={[styles.optionText, active && styles.optionTextSelected]}>{option.text}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
+
+        <View style={styles.bottomAction}>
+          <PrimaryButton label={last ? "see my result" : "next"} disabled={!selected} onPress={advance} />
+        </View>
+      </View>
+    </View>
+  );
+}
+
+function RevealScreen({
+  personality,
+  onDone
+}: {
+  personality: PersonalityType;
+  onDone: () => void;
+}) {
+  const type = personalityTypes[personality];
+  const theme = themes[personality];
+
+  return (
+    <View style={[styles.flex, { backgroundColor: theme.surface }]}>
+      <ScrollView contentContainerStyle={styles.revealContent} showsVerticalScrollIndicator={false}>
+        <View style={styles.revealEmblem}>
+          <TypeEmblem personality={personality} ink={theme.ink} edge={theme.edge} />
+        </View>
+
+        <Text style={[styles.eyebrow, { color: theme.ink }]}>your type</Text>
+        <Text style={[styles.revealName, { color: theme.ink }]}>{type.name}</Text>
+        <Text style={[styles.revealQuote, { color: theme.ink }]}>“{type.quote}”</Text>
+
+        <View style={[styles.revealCard, { backgroundColor: theme.raised }]}>
+          <Text style={[styles.eyebrow, { color: theme.ink }]}>your pattern</Text>
+          <Text style={[styles.revealPattern, { color: theme.ink }]}>{type.pattern}</Text>
+        </View>
+
+        <View style={styles.revealTags}>
+          {type.traits.map((trait) => (
+            <View key={trait} style={[styles.tag, { backgroundColor: theme.raised }]}>
+              <Text style={[styles.tagText, { color: theme.ink }]}>{trait}</Text>
+            </View>
+          ))}
+        </View>
+      </ScrollView>
+
+      <View style={styles.bottomAction}>
+        <PrimaryButton label="meet your plant" onPress={onDone} />
+      </View>
     </View>
   );
 }
@@ -980,6 +1197,45 @@ const styles = StyleSheet.create({
   homeCardBody: { ...text.label, fontFamily: font.sans, color: color.stone[500], marginTop: 7 },
   inverseText: { color: color.onDark },
   inverseMuted: { color: color.onDarkMuted },
+
+  // onboarding
+  welcomeContent: { flex: 1, paddingHorizontal: space.gutter, justifyContent: "center", gap: space.lg },
+  welcomeQuote: { ...text.display, color: color.forest[600], marginTop: space.md },
+  welcomeBody: { ...text.bodyLg, color: color.stone[700], maxWidth: 320 },
+  welcomeAction: { paddingHorizontal: space.gutter, paddingBottom: space.xxl, gap: space.sm },
+  welcomeNote: { ...text.caption, color: color.stone[500], textAlign: "center" },
+  quizHead: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginTop: space.lg,
+    marginBottom: space.md
+  },
+  progressDots: { flexDirection: "row", gap: space.xs },
+  progressDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: color.forest[100] },
+  progressDotActive: { backgroundColor: color.forest[500] },
+  optionList: { gap: space.sm, marginTop: space.lg },
+  option: {
+    borderRadius: radius.group,
+    borderWidth: 1,
+    borderColor: color.paper[300],
+    backgroundColor: color.paper.card,
+    paddingHorizontal: space.md + 2,
+    paddingVertical: space.md,
+    minHeight: target.min
+  },
+  optionSelected: { borderWidth: 2, borderColor: color.forest[500], backgroundColor: color.forest[50] },
+  optionText: { ...text.bodyLg, fontSize: 16, lineHeight: 24, color: color.stone[700] },
+  optionTextSelected: { color: color.forest[600] },
+
+  // type reveal
+  revealContent: { paddingHorizontal: space.lg, paddingTop: space.xxl, paddingBottom: 108 },
+  revealEmblem: { width: 130, height: 130, alignSelf: "center", marginBottom: space.xl },
+  revealName: { ...text.displayLg, marginTop: space.xs },
+  revealQuote: { fontFamily: font.serifItalic, fontSize: 17, lineHeight: 26, marginTop: space.sm },
+  revealCard: { borderRadius: radius.card, padding: space.gutter, marginTop: space.lg },
+  revealPattern: { ...text.bodyLg, fontSize: 16, lineHeight: 26, marginTop: space.sm },
+  revealTags: { flexDirection: "row", flexWrap: "wrap", gap: space.xs, marginTop: space.md },
 
   // ritual flow — no tab bar, so the action sits a gutter off the bottom
   flowContent: { flex: 1, paddingHorizontal: space.gutter, paddingTop: space.md, paddingBottom: space.lg },

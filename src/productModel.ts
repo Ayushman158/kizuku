@@ -64,3 +64,54 @@ export function stageFor(actionsDone: number): GrowthStage {
   if (actionsDone < 3) return "sapling";
   return "tree";
 }
+
+/**
+ * Three questions, in the wireframe's order. Each option belongs to a type;
+ * the option order is planner, optimiser, seeker throughout.
+ */
+export const quiz = [
+  {
+    prompt: "sunday evening. big week ahead. what are you most likely doing?",
+    options: [
+      {
+        text: "planning the week — time blocked, tasks listed, thinking about what could go wrong",
+        type: "planner"
+      },
+      { text: "reviewing if i'm on track. checking what will move me forward.", type: "optimizer" },
+      { text: "sitting with a vague feeling something isn't quite right", type: "seeker" }
+    ]
+  },
+  {
+    prompt: "a decision doesn't go as hoped. what's your first instinct?",
+    options: [
+      { text: "what did i miss? what would i do differently next time?", type: "planner" },
+      { text: "what did it cost me? how do i recover and move forward fast?", type: "optimizer" },
+      { text: "did i make this decision for the right reasons?", type: "seeker" }
+    ]
+  },
+  {
+    prompt: "what are you most honestly afraid of?",
+    options: [
+      { text: "committing to the wrong thing and having no backup", type: "planner" },
+      { text: "wasting my potential on things that won't add up", type: "optimizer" },
+      { text: "living a life that looked right but felt meaningless inside", type: "seeker" }
+    ]
+  }
+] as const satisfies ReadonlyArray<{
+  prompt: string;
+  options: ReadonlyArray<{ text: string; type: PersonalityType }>;
+}>;
+
+/**
+ * Most-chosen type wins. A three-way split is broken by the last answer:
+ * the wireframe marks question three as the one that makes the result feel
+ * earned, so it carries the most weight.
+ */
+export function typeFrom(answers: PersonalityType[]): PersonalityType {
+  const tally = new Map<PersonalityType, number>();
+  answers.forEach((answer) => tally.set(answer, (tally.get(answer) ?? 0) + 1));
+  const top = Math.max(...tally.values());
+  const leaders = [...tally.entries()].filter(([, count]) => count === top).map(([type]) => type);
+  const last = answers[answers.length - 1];
+  return leaders.length === 1 ? leaders[0]! : last ?? "optimizer";
+}
