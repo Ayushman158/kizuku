@@ -23,6 +23,7 @@ import {
   quiz,
   stageFor,
   typeFrom,
+  type GrowthStage,
   type PersonalityType
 } from "./productModel";
 import { themes } from "./tokens";
@@ -49,11 +50,28 @@ type Screen =
 type MainTab = "home" | "patterns" | "profile";
 
 const assets = {
-  background: require("../assets/garden-background.png"),
-  seed: require("../assets/optimiser-seed.png"),
-  sapling: require("../assets/sapling.png"),
-  tree: require("../assets/optimiser-tree.png")
+  background: require("../assets/garden-background.png")
 };
+
+/** Every type's own plant, both states, straight from the hi-fi file. */
+const plants = {
+  optimizer: {
+    seed: require("../assets/optimiser-seed.png"),
+    grown: require("../assets/optimiser-tree.png")
+  },
+  seeker: {
+    seed: require("../assets/seeker-seed.png"),
+    grown: require("../assets/seeker-tree.png")
+  },
+  planner: {
+    seed: require("../assets/planner-seed.png"),
+    grown: require("../assets/planner-tree.png")
+  }
+} as const;
+
+function plantFor(personality: PersonalityType, stage: GrowthStage) {
+  return plants[personality][stage];
+}
 
 function useReduceMotionPreference() {
   const [reduceMotion, setReduceMotion] = useState(false);
@@ -180,7 +198,7 @@ export function KizukuApp() {
           ) : null}
 
           {screen === "growth" ? (
-            <GrowthScreen actionsDone={actionsDone} onDone={() => setScreen("home")} />
+            <GrowthScreen personality={personality} actionsDone={actionsDone} onDone={() => setScreen("home")} />
           ) : null}
 
           {screen === "patterns" ? (
@@ -363,11 +381,11 @@ function HomeScreen({
 
       <Animated.View
         style={[
-          heroStageStyle[stage],
+          heroStageStyle(personality, stage),
           { transform: [{ scale: treeScale }, { scale: treeReactionScale }] }
         ]}
       >
-        <Image source={assets[stage]} resizeMode="contain" style={styles.heroTreeImage} />
+        <Image source={plantFor(personality, stage)} resizeMode="contain" style={styles.heroTreeImage} />
       </Animated.View>
 
       <Animated.View
@@ -692,7 +710,15 @@ function ReflectionScreen({
   );
 }
 
-function GrowthScreen({ actionsDone, onDone }: { actionsDone: number; onDone: () => void }) {
+function GrowthScreen({
+  personality,
+  actionsDone,
+  onDone
+}: {
+  personality: PersonalityType;
+  actionsDone: number;
+  onDone: () => void;
+}) {
   const [grown, setGrown] = useState(false);
   const previous = stageFor(actionsDone - 1);
   const current = stageFor(actionsDone);
@@ -704,7 +730,7 @@ function GrowthScreen({ actionsDone, onDone }: { actionsDone: number; onDone: ()
 
   return (
     <LinearGradient colors={["#F0F4E6", "#DDDCA5"]} style={[styles.flex, styles.center]}>
-      <Image source={assets[grown ? current : previous]} resizeMode="contain" style={styles.growthPlant} />
+      <Image source={plantFor(personality, grown ? current : previous)} resizeMode="contain" style={styles.growthPlant} />
       <Text style={styles.growthTitle}>{grown ? "something grew." : "planting…"}</Text>
       {grown ? (
         <>
@@ -827,7 +853,7 @@ function ProfileScreen({
     <View style={[styles.flex, styles.paperScreen]}>
       <ScrollView contentContainerStyle={styles.profileScroll} showsVerticalScrollIndicator={false}>
         <View style={styles.profileMark}>
-          <Image source={assets[stage]} resizeMode="contain" style={styles.profileSeed} />
+          <Image source={plantFor(personality, stage)} resizeMode="contain" style={styles.profileSeed} />
         </View>
         <Text style={styles.profileTitle}>{type.name}</Text>
         <Text style={styles.profileSubtitle}>
@@ -1168,9 +1194,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center"
   },
-  heroTree: { position: "absolute", top: 205, left: -2, width: 326, height: 360, transformOrigin: "center bottom" },
-  heroSapling: { position: "absolute", top: 300, left: 52, width: 210, height: 265, transformOrigin: "center bottom" },
-  heroSeed: { position: "absolute", top: 402, left: 96, width: 124, height: 163, transformOrigin: "center bottom" },
+  heroOptimizerGrown: { position: "absolute", top: 205, left: -2, width: 326, height: 360, transformOrigin: "center bottom" },
+  heroOptimizerSeed: { position: "absolute", top: 402, left: 96, width: 124, height: 163, transformOrigin: "center bottom" },
+  heroSeekerGrown: { position: "absolute", top: 205, left: 11, width: 300, height: 360, transformOrigin: "center bottom" },
+  heroSeekerSeed: { position: "absolute", top: 417, left: 86, width: 150, height: 148, transformOrigin: "center bottom" },
+  heroPlannerGrown: { position: "absolute", top: 185, left: 22, width: 278, height: 380, transformOrigin: "center bottom" },
+  heroPlannerSeed: { position: "absolute", top: 465, left: 76, width: 170, height: 100, transformOrigin: "center bottom" },
   heroTreeImage: { width: "100%", height: "100%" },
   heroWateringCan: { position: "absolute", top: 420, right: 0, width: 154, height: 162, zIndex: 2 },
   homeCardMotion: { position: "absolute", left: space.gutter, right: space.gutter, bottom: 146 },
@@ -1326,7 +1355,7 @@ const styles = StyleSheet.create({
   skipText: { ...text.label, fontFamily: font.sans, color: color.stone[700], textDecorationLine: "underline" },
 
   // growth
-  growthPlant: { width: 244, height: 300 },
+  growthPlant: { width: 268, height: 330 },
   growthTitle: { ...text.displayLg, color: color.forest[600], marginTop: space.sm },
   growthBody: { ...text.bodyLg, color: color.stone[700], textAlign: "center", maxWidth: 300, marginTop: space.sm },
   growthButton: { position: "absolute", left: space.lg, right: space.lg, bottom: 54 },
@@ -1417,8 +1446,13 @@ const styles = StyleSheet.create({
   navLabelActive: { fontFamily: font.sansSemibold, color: color.forest[500] }
 });
 
-const heroStageStyle = {
-  seed: styles.heroSeed,
-  sapling: styles.heroSapling,
-  tree: styles.heroTree
+/** Frames sized to each plant's own proportions, all sharing the horizon at 565. */
+const heroFrames = {
+  optimizer: { seed: styles.heroOptimizerSeed, grown: styles.heroOptimizerGrown },
+  seeker: { seed: styles.heroSeekerSeed, grown: styles.heroSeekerGrown },
+  planner: { seed: styles.heroPlannerSeed, grown: styles.heroPlannerGrown }
 } as const;
+
+function heroStageStyle(personality: PersonalityType, stage: GrowthStage) {
+  return heroFrames[personality][stage];
+}

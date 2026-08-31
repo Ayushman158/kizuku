@@ -56,13 +56,16 @@ export const personalityTypes = {
 
 export type PersonalityType = keyof typeof personalityTypes;
 
-export type GrowthStage = "seed" | "sapling" | "tree";
+/**
+ * Two states, because two are drawn: the hi-fi file gives every type a day-0
+ * seed and a grown plant, and nothing in between. A middle stage exists as
+ * artwork for the optimiser only, so shipping three would break the other two.
+ */
+export type GrowthStage = "seed" | "grown";
 
 /** Growth follows actions, never days — emotional labour, not time served. */
 export function stageFor(actionsDone: number): GrowthStage {
-  if (actionsDone <= 0) return "seed";
-  if (actionsDone < 3) return "sapling";
-  return "tree";
+  return actionsDone <= 0 ? "seed" : "grown";
 }
 
 /**
