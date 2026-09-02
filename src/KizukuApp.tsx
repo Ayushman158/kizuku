@@ -32,6 +32,7 @@ import { Icon, type IconName } from "./Icon";
 import { ThinkingOrb } from "./ThinkingOrb";
 import { Watering } from "./Watering";
 import { HoldButton } from "./HoldButton";
+import { GrowthSequence, preloadGrowthFrames } from "./GrowthSequence";
 import Svg, { Circle, Path } from "react-native-svg";
 import KizukuMark from "../assets/kizuku-mark.svg";
 import MeditatingFigure from "../assets/kizuku-meditating.svg";
@@ -635,6 +636,10 @@ function ReflectionScreen({
   onContinue: () => void;
   onTab: (tab: MainTab) => void;
 }) {
+  useEffect(() => {
+    preloadGrowthFrames();
+  }, []);
+
   return (
     <GradientScreen personality={personality}>
       <View style={styles.flowContent}>
@@ -734,7 +739,16 @@ function GrowthScreen({
     <Pressable accessibilityRole="button" onPress={grown ? onDone : undefined} style={styles.flex}>
       <LinearGradient colors={themes[personality].growth} style={[styles.flex, styles.center]}>
         <View style={styles.growthStage}>
-          {transforms ? (
+          {/* the optimiser's opening is drawn frame by frame; the other two
+              types have no clip, so they use the spring rise */}
+          {transforms && personality === "optimizer" ? (
+            <GrowthSequence
+              grownSource={plantFor(personality, current)}
+              reduceMotion={reduceMotion}
+            />
+          ) : null}
+
+          {transforms && personality !== "optimizer" ? (
             <Animated.Image
               source={plantFor(personality, previous)}
               resizeMode="contain"
@@ -748,6 +762,7 @@ function GrowthScreen({
             />
           ) : null}
 
+          {personality === "optimizer" && transforms ? null : (
           <Animated.Image
             source={plantFor(personality, current)}
             resizeMode="contain"
@@ -761,6 +776,7 @@ function GrowthScreen({
                 : { transform: [{ scale: acknowledge }] }
             ]}
           />
+          )}
         </View>
 
         <Animated.View
