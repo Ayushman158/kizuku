@@ -28,6 +28,7 @@ import {
 } from "./productModel";
 import { themes } from "./tokens";
 import { color, elevation, font, motion, radius, space, target, text } from "./tokens";
+import { ThinkingOrb } from "./ThinkingOrb";
 import Svg, { Circle, Path } from "react-native-svg";
 import KizukuMark from "../assets/kizuku-mark.svg";
 import MeditatingFigure from "../assets/kizuku-meditating.svg";
@@ -548,13 +549,12 @@ function ThinkingScreen({ personality, onDone }: { personality: PersonalityType;
     };
   }, [breathe, onDone, reduceMotion]);
 
-  const figureScale = breathe.interpolate({ inputRange: [0, 1], outputRange: [1, 1.035] });
   const figureLift = breathe.interpolate({ inputRange: [0, 1], outputRange: [2, -2] });
 
   return (
     <LinearGradient colors={themes[personality].ritual} style={[styles.flex, styles.center]}>
-      <Animated.View style={[styles.thinkingFigure, { transform: [{ translateY: figureLift }, { scale: figureScale }] }]}>
-        <MeditatingFigure width="100%" height="100%" />
+      <Animated.View style={[styles.thinkingOrb, { transform: [{ translateY: figureLift }] }]}>
+        <ThinkingOrb personality={personality} size={124} />
       </Animated.View>
       <Text style={styles.thinkingText}>sitting with what you wrote…</Text>
       <Text style={[styles.thinkingText, !secondLine && styles.hidden]}>picking one small thing…</Text>
@@ -1353,7 +1353,7 @@ const styles = StyleSheet.create({
   secondaryButtonText: { ...text.label, fontFamily: font.sansMedium, fontSize: 15, lineHeight: 20, color: color.forest[600] },
 
   // thinking + committing
-  thinkingFigure: { width: 112, height: 200, marginBottom: 28 },
+  thinkingOrb: { width: 124, height: 124, marginBottom: 36 },
   thinkingText: { ...text.title, fontFamily: font.serifLight, color: color.forest[600], marginTop: space.sm },
   commitCopy: { position: "absolute", top: "28%", left: space.xl, right: space.xl, alignItems: "center" },
   commitTitle: { ...text.display, color: color.forest[600], textAlign: "center", marginTop: space.md },

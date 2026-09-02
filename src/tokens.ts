@@ -85,9 +85,10 @@ export const font = {
   serifLight: "Newsreader_300Light",
   serif: "Newsreader_400Regular",
   serifItalic: "Newsreader_300Light_Italic",
-  sans: "HankenGrotesk_400Regular",
-  sansMedium: "HankenGrotesk_500Medium",
-  sansSemibold: "HankenGrotesk_600SemiBold"
+  /** Satoshi is the brand face, instanced from the licensed variable file */
+  sans: "Satoshi-Regular",
+  sansMedium: "Satoshi-Medium",
+  sansSemibold: "Satoshi-SemiBold"
 } as const;
 
 /** Nine steps, each with one job. 11 is the floor. */

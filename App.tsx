@@ -6,11 +6,6 @@ import {
   Newsreader_300Light_Italic,
   Newsreader_400Regular
 } from "@expo-google-fonts/newsreader";
-import {
-  HankenGrotesk_400Regular,
-  HankenGrotesk_500Medium,
-  HankenGrotesk_600SemiBold
-} from "@expo-google-fonts/hanken-grotesk";
 import { KizukuApp } from "./src/KizukuApp";
 import { color } from "./src/tokens";
 
@@ -19,9 +14,9 @@ export default function App() {
     Newsreader_300Light,
     Newsreader_300Light_Italic,
     Newsreader_400Regular,
-    HankenGrotesk_400Regular,
-    HankenGrotesk_500Medium,
-    HankenGrotesk_600SemiBold
+    "Satoshi-Regular": require("./assets/fonts/Satoshi-Regular.ttf"),
+    "Satoshi-Medium": require("./assets/fonts/Satoshi-Medium.ttf"),
+    "Satoshi-SemiBold": require("./assets/fonts/Satoshi-SemiBold.ttf")
   });
 
   if (!fontsLoaded) {
