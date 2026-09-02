@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { AccessibilityInfo, Animated, Easing, Platform, Pressable, Text, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { color, radius, target, text } from "./tokens";
+import { Icon, type IconName } from "./Icon";
 
 /**
  * Hold to commit.
@@ -135,7 +135,7 @@ export function HoldButton({
           <Text style={{ ...text.label, fontSize: 15, lineHeight: 20, color: "#FFFFFF" }}>
             {held ? "keep holding…" : label}
           </Text>
-          <Ionicons name={held ? "ellipse-outline" : "arrow-forward"} size={17} color="#FFFFFF" />
+          <Icon name={held ? "circle" : "arrow-forward"} size={17} color="#FFFFFF" />
         </View>
       </Animated.View>
     </Pressable>

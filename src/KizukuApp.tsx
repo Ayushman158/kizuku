@@ -16,7 +16,6 @@ import {
   useWindowDimensions,
   View
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import {
   actionTemplates,
@@ -29,6 +28,7 @@ import {
 } from "./productModel";
 import { themes } from "./tokens";
 import { color, elevation, font, motion, radius, space, target, text } from "./tokens";
+import { Icon, type IconName } from "./Icon";
 import { ThinkingOrb } from "./ThinkingOrb";
 import { Watering } from "./Watering";
 import { HoldButton } from "./HoldButton";
@@ -359,7 +359,7 @@ function HomeScreen({
           </View>
           <Text style={styles.homeTitle}>{personalityTypes[personality].name}</Text>
         </View>
-        <IconButton icon="person-outline" label="Open profile" onPress={onProfile} />
+        <IconButton icon="person" label="Open profile" onPress={onProfile} />
       </View>
 
       <Animated.View
@@ -398,7 +398,7 @@ function HomeScreen({
                 : "share a worry and get your action"}
             </Text>
           </View>
-          <Ionicons
+          <Icon
             name={todayCompleted ? "checkmark" : "arrow-forward"}
             size={25}
             color={todayCompleted ? "#F2F5E9" : color.stone[500]}
@@ -449,7 +449,7 @@ function WorryScreen({
               value={value}
             />
             <View style={styles.micButton}>
-              <Ionicons name="mic-outline" size={17} color={color.stone[700]} />
+              <Icon name="mic" size={17} color={color.stone[700]} />
             </View>
           </View>
           <View style={styles.inputNote}>
@@ -460,7 +460,7 @@ function WorryScreen({
         </View>
 
         <View style={styles.privateLine}>
-          <Ionicons name="lock-closed-outline" size={12} color={color.forest[500]} />
+          <Icon name="lock" size={12} color={color.forest[500]} />
           <Text style={styles.privateText}>private · stays on this device</Text>
         </View>
 
@@ -551,7 +551,7 @@ function ActionScreen({
 
         <View style={styles.actionCard}>
           <View style={styles.actionTag}>
-            <Ionicons name="sparkles-outline" size={13} color={color.stone[500]} />
+            <Icon name="sparkles" size={13} color={color.stone[500]} />
             <Text style={styles.actionTagText}>{action.tag}</Text>
           </View>
           <Text style={styles.actionCopy}>{action.text}</Text>
@@ -659,7 +659,7 @@ function ReflectionScreen({
                 value={value}
               />
               <View style={styles.micButton}>
-                <Ionicons name="mic-outline" size={17} color={color.stone[700]} />
+                <Icon name="mic" size={17} color={color.stone[700]} />
               </View>
             </View>
             <View style={styles.inputNote}>
@@ -821,10 +821,10 @@ function ProfileScreen({
 }) {
   const type = personalityTypes[personality];
   const stage = stageFor(actionsDone);
-  const rows: Array<{ icon: keyof typeof Ionicons.glyphMap; label: string; value: string }> = [
-    { icon: "moon-outline", label: "notifications", value: "gentle · 1x/day" },
-    { icon: "eye-outline", label: "theme", value: "forest" },
-    { icon: "lock-closed-outline", label: "privacy", value: "on-device only" }
+  const rows: Array<{ icon: IconName; label: string; value: string }> = [
+    { icon: "moon", label: "notifications", value: "gentle · 1x/day" },
+    { icon: "eye", label: "theme", value: "forest" },
+    { icon: "lock", label: "privacy", value: "on-device only" }
   ];
 
   return (
@@ -847,18 +847,18 @@ function ProfileScreen({
           {rows.map((row, index) => (
             <View key={row.label} style={[styles.settingsRow, index < rows.length - 1 && styles.settingsRowBorder]}>
               <View style={styles.settingsLabel}>
-                <Ionicons name={row.icon} size={17} color={color.stone[500]} />
+                <Icon name={row.icon} size={17} color={color.stone[500]} />
                 <Text style={styles.settingsLabelText}>{row.label}</Text>
               </View>
               <View style={styles.settingsValue}>
                 <Text style={styles.settingsValueText}>{row.value}</Text>
-                <Ionicons name="chevron-forward" size={14} color={color.stone[500]} />
+                <Icon name="chevron-forward" size={14} color={color.stone[500]} />
               </View>
             </View>
           ))}
         </View>
 
-        <SecondaryButton label="retake personality quiz" icon="refresh-outline" onPress={onRetake} />
+        <SecondaryButton label="retake personality quiz" icon="refresh" onPress={onRetake} />
         <Pressable onPress={onReset} style={styles.resetButton}>
           <Text style={styles.resetText}>reset prototype</Text>
         </Pressable>
@@ -1061,13 +1061,13 @@ function IconButton({
   label,
   onPress
 }: {
-  icon: keyof typeof Ionicons.glyphMap;
+  icon: IconName;
   label: string;
   onPress: () => void;
 }) {
   return (
     <Pressable accessibilityLabel={label} accessibilityRole="button" onPress={onPress} style={({ pressed }) => [styles.iconButton, pressed && styles.pressed]}>
-      <Ionicons name={icon} size={18} color={color.stone[700]} />
+      <Icon name={icon} size={18} color={color.stone[700]} />
     </Pressable>
   );
 }
@@ -1089,7 +1089,7 @@ function PrimaryButton({
       style={({ pressed }) => [styles.primaryButton, disabled && styles.primaryButtonDisabled, pressed && styles.pressed]}
     >
       <Text style={styles.primaryButtonText}>{label}</Text>
-      <Ionicons name="arrow-forward" size={17} color="#FFFFFF" />
+      <Icon name="arrow-forward" size={17} color="#FFFFFF" />
     </Pressable>
   );
 }
@@ -1101,21 +1101,21 @@ function SecondaryButton({
 }: {
   label: string;
   onPress: () => void;
-  icon?: keyof typeof Ionicons.glyphMap;
+  icon?: IconName;
 }) {
   return (
     <Pressable accessibilityRole="button" onPress={onPress} style={({ pressed }) => [styles.secondaryButton, pressed && styles.pressed]}>
-      {icon ? <Ionicons name={icon} size={17} color={color.forest[500]} /> : null}
+      {icon ? <Icon name={icon} size={17} color={color.forest[500]} /> : null}
       <Text style={styles.secondaryButtonText}>{label}</Text>
     </Pressable>
   );
 }
 
 function BottomNav({ active, onSelect }: { active: MainTab; onSelect: (tab: MainTab) => void }) {
-  const items: Array<{ id: MainTab; label: string; icon: keyof typeof Ionicons.glyphMap }> = [
-    { id: "home", label: "garden", icon: "home-outline" },
-    { id: "patterns", label: "pattern", icon: "stats-chart-outline" },
-    { id: "profile", label: "you", icon: "person-outline" }
+  const items: Array<{ id: MainTab; label: string; icon: IconName }> = [
+    { id: "home", label: "garden", icon: "home" },
+    { id: "patterns", label: "pattern", icon: "stats" },
+    { id: "profile", label: "you", icon: "person" }
   ];
 
   return (
@@ -1130,7 +1130,7 @@ function BottomNav({ active, onSelect }: { active: MainTab; onSelect: (tab: Main
             onPress={() => onSelect(item.id)}
             style={styles.navItem}
           >
-            <Ionicons name={item.icon} size={20} color={selected ? color.forest[500] : color.stone[400]} />
+            <Icon name={item.icon} size={20} color={selected ? color.forest[500] : color.stone[400]} />
             <Text style={[styles.navLabel, selected && styles.navLabelActive]}>{item.label}</Text>
           </Pressable>
         );

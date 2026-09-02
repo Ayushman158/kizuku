@@ -17,7 +17,18 @@
       "eas": {
         "projectId": ""
       }
+    },
+    "description": "One future worry, one grounded action, one day at a time.",
+    "primaryColor": "#2C5228",
+    "web": {
+      "name": "Kizuku",
+      "shortName": "Kizuku",
+      "description": "One future worry, one grounded action, one day at a time.",
+      "themeColor": "#B8D4AC",
+      "backgroundColor": "#FBF8EE",
+      "display": "standalone",
+      "orientation": "portrait",
+      "lang": "en"
     }
   }
 }
-

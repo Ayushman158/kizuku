@@ -1,19 +1,14 @@
 import { StatusBar } from "expo-status-bar";
 import { View } from "react-native";
 import { useFonts } from "expo-font";
-import {
-  Newsreader_300Light,
-  Newsreader_300Light_Italic,
-  Newsreader_400Regular
-} from "@expo-google-fonts/newsreader";
 import { KizukuApp } from "./src/KizukuApp";
 import { color } from "./src/tokens";
 
 export default function App() {
   const [fontsLoaded] = useFonts({
-    Newsreader_300Light,
-    Newsreader_300Light_Italic,
-    Newsreader_400Regular,
+    Newsreader_300Light: require("./assets/fonts/Newsreader_300Light.ttf"),
+    Newsreader_300Light_Italic: require("./assets/fonts/Newsreader_300Light_Italic.ttf"),
+    Newsreader_400Regular: require("./assets/fonts/Newsreader_400Regular.ttf"),
     "Satoshi-Regular": require("./assets/fonts/Satoshi-Regular.ttf"),
     "Satoshi-Medium": require("./assets/fonts/Satoshi-Medium.ttf"),
     "Satoshi-SemiBold": require("./assets/fonts/Satoshi-SemiBold.ttf")
