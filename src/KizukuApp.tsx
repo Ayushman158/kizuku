@@ -111,6 +111,27 @@ export function KizukuApp() {
 
   const openTab = (tab: MainTab) => setScreen(tab);
 
+  /**
+   * Dev-only: jump straight to a screen. Used for capturing the real UI and
+   * for reaching a state by hand without walking the whole loop. __DEV__ is
+   * false in release builds, so this cannot ship.
+   */
+  useEffect(() => {
+    if (!__DEV__ || typeof window === "undefined") return;
+    const q = new URLSearchParams(window.location.search);
+    const p = q.get("p") as PersonalityType | null;
+    const n = q.get("n");
+    const w = q.get("w");
+    const target = q.get("s") as Screen | null;
+    if (p && p in personalityTypes) setPersonality(p);
+    if (n) setActionsDone(Number(n) || 0);
+    if (w) {
+      setWorry("i keep worrying that i will not finish this in time.");
+      setReflection("i did it, and it was smaller than i feared.");
+    }
+    if (target) setScreen(target);
+  }, []);
+
   const startQuiz = () => {
     setAnswers([]);
     setScreen("quiz");
@@ -1348,7 +1369,20 @@ const styles = StyleSheet.create({
     ...elevation.raised
   },
   inputRow: { flexDirection: "row", alignItems: "flex-start", gap: space.xs, flex: 1 },
-  input: { flex: 1, minHeight: 116, ...text.body, color: color.stone[900], padding: 0 },
+  input: {
+    flex: 1,
+    minHeight: 116,
+    ...text.body,
+    color: color.stone[900],
+    padding: 0,
+    // the web target draws the browser's blue focus ring, which is neither the
+    // brand's colour nor a colour anywhere in the system. Replaced rather than
+    // removed: the ring still shows, it just belongs to the product.
+    ...Platform.select({
+      web: { outlineColor: color.forest[500], outlineWidth: 2, outlineOffset: 4 },
+      default: {}
+    })
+  },
   micButton: {
     width: target.min,
     height: target.min,
