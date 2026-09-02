@@ -691,34 +691,96 @@ function GrowthScreen({
   actionsDone: number;
   onDone: () => void;
 }) {
-  const [grown, setGrown] = useState(false);
+  const reduceMotion = useReduceMotionPreference();
   const previous = stageFor(actionsDone - 1);
   const current = stageFor(actionsDone);
+  const transforms = previous !== current;
+
+  const [grown, setGrown] = useState(false);
+  const rise = useRef(new Animated.Value(0)).current;
+  const settleIn = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    const timer = setTimeout(() => setGrown(true), 1100);
+    const timer = setTimeout(() => {
+      setGrown(true);
+
+      if (reduceMotion) {
+        rise.setValue(1);
+        settleIn.setValue(1);
+        return;
+      }
+
+      Animated.parallel([
+        // the plant rises from where the seed stood — same ground, same centre
+        Animated.spring(rise, { toValue: 1, ...motion.growSpring, useNativeDriver: true }),
+        Animated.timing(settleIn, {
+          toValue: 1,
+          duration: 420,
+          delay: 160,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true
+        })
+      ]).start();
+    }, 900);
+
     return () => clearTimeout(timer);
-  }, []);
+  }, [reduceMotion, rise, settleIn]);
+
+  // when the stage has not changed there is nothing to transform into, so the
+  // plant acknowledges instead of pretending — the count is what grew
+  const acknowledge = rise.interpolate({ inputRange: [0, 0.45, 1], outputRange: [1, 1.045, 1] });
 
   return (
     <Pressable accessibilityRole="button" onPress={grown ? onDone : undefined} style={styles.flex}>
       <LinearGradient colors={themes[personality].growth} style={[styles.flex, styles.center]}>
-        <Image
-          source={plantFor(personality, grown ? current : previous)}
-          resizeMode="contain"
-          style={styles.growthPlant}
-        />
-        {grown ? (
-          <>
-            <Text style={styles.growthTitle}>something grew.</Text>
-            <Text style={styles.growthBody}>
-              your garden now holds {actionsDone} {actionsDone === 1 ? "moment" : "moments"} of showing up.
-              tap anywhere to continue.
-            </Text>
-          </>
-        ) : (
-          <Text style={styles.growthTitle}>planting…</Text>
-        )}
+        <View style={styles.growthStage}>
+          {transforms ? (
+            <Animated.Image
+              source={plantFor(personality, previous)}
+              resizeMode="contain"
+              style={[
+                styles.growthSeedLayer,
+                {
+                  opacity: rise.interpolate({ inputRange: [0, 0.5, 1], outputRange: [1, 0.12, 0] }),
+                  transform: [{ scale: rise.interpolate({ inputRange: [0, 1], outputRange: [1, 0.88] }) }]
+                }
+              ]}
+            />
+          ) : null}
+
+          <Animated.Image
+            source={plantFor(personality, current)}
+            resizeMode="contain"
+            style={[
+              styles.growthPlantLayer,
+              transforms
+                ? {
+                    opacity: rise.interpolate({ inputRange: [0, 0.3, 1], outputRange: [0, 0.6, 1] }),
+                    transform: [{ scale: rise.interpolate({ inputRange: [0, 1], outputRange: [0.52, 1] }) }]
+                  }
+                : { transform: [{ scale: acknowledge }] }
+            ]}
+          />
+        </View>
+
+        <Animated.View
+          style={{
+            opacity: settleIn,
+            transform: [{ translateY: settleIn.interpolate({ inputRange: [0, 1], outputRange: [10, 0] }) }]
+          }}
+        >
+          {grown ? (
+            <>
+              <Text style={styles.growthTitle}>something grew.</Text>
+              <Text style={styles.growthBody}>
+                your garden now holds {actionsDone} {actionsDone === 1 ? "moment" : "moments"} of showing up.
+                tap anywhere to continue.
+              </Text>
+            </>
+          ) : null}
+        </Animated.View>
+
+        {grown ? null : <Text style={styles.growthTitle}>planting…</Text>}
       </LinearGradient>
     </Pressable>
   );
@@ -1346,7 +1408,10 @@ const styles = StyleSheet.create({
   skipText: { ...text.label, fontFamily: font.sans, color: color.stone[700], textDecorationLine: "underline" },
 
   // growth
-  growthPlant: { width: 300, height: 380 },
+  // both layers stand on one ground line, so the plant rises out of the seed
+  growthStage: { width: 300, height: 360, alignItems: "center", justifyContent: "flex-end" },
+  growthPlantLayer: { position: "absolute", bottom: 0, width: 290, height: 356, transformOrigin: "center bottom" },
+  growthSeedLayer: { position: "absolute", bottom: 0, width: 186, height: 168, transformOrigin: "center bottom" },
   growthTitle: { fontFamily: font.serifItalic, fontSize: 19, lineHeight: 28, color: color.forest[600], marginTop: space.lg },
   growthBody: { ...text.caption, color: color.stone[700], textAlign: "center", maxWidth: 280, marginTop: space.xs },
 

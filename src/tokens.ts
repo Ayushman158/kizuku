@@ -162,6 +162,8 @@ export const motion = {
   enterSoft: 650,
   reactTap: 260,
   reactSpring: { damping: 9, stiffness: 130 },
+  /** the plant rising: slow, deliberate, barely overshooting — alive, not springy */
+  growSpring: { damping: 15, stiffness: 58 },
   returnSpring: { damping: 12, stiffness: 120 }
 } as const;
 
