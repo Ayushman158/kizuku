@@ -13,6 +13,7 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  useWindowDimensions,
   View
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
@@ -29,6 +30,7 @@ import {
 import { themes } from "./tokens";
 import { color, elevation, font, motion, radius, space, target, text } from "./tokens";
 import { ThinkingOrb } from "./ThinkingOrb";
+import { Watering } from "./Watering";
 import Svg, { Circle, Path } from "react-native-svg";
 import KizukuMark from "../assets/kizuku-mark.svg";
 import MeditatingFigure from "../assets/kizuku-meditating.svg";
@@ -252,12 +254,12 @@ function HomeScreen({
   onProfile: () => void;
 }) {
   const reduceMotion = useReduceMotionPreference();
+  const { width } = useWindowDimensions();
   const stage = stageFor(actionsDone);
   const landscapeDrift = useRef(new Animated.Value(0)).current;
   const treeBreath = useRef(new Animated.Value(0)).current;
   const treeResponse = useRef(new Animated.Value(0)).current;
   const promptEntrance = useRef(new Animated.Value(0)).current;
-  const wateringPosition = useRef(new Animated.ValueXY()).current;
 
   useEffect(() => {
     promptEntrance.setValue(reduceMotion ? 1 : 0);
@@ -312,57 +314,33 @@ function HomeScreen({
   }, [landscapeDrift, promptEntrance, reduceMotion, treeBreath]);
 
   const waterTree = () => {
-    if (!reduceMotion) {
-      Animated.sequence([
-        Animated.timing(treeResponse, {
-          toValue: 1,
-          duration: motion.reactTap,
-          easing: Easing.out(Easing.cubic),
-          useNativeDriver: true
-        }),
-        Animated.spring(treeResponse, {
-          toValue: 0,
-          ...motion.reactSpring,
-          useNativeDriver: true
-        })
-      ]).start();
-    }
-    Animated.spring(wateringPosition, {
-      toValue: { x: 0, y: 0 },
-      ...motion.returnSpring,
-      useNativeDriver: true
-    }).start();
+    if (reduceMotion) return;
+    Animated.sequence([
+      Animated.timing(treeResponse, {
+        toValue: 1,
+        duration: motion.reactTap,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true
+      }),
+      Animated.spring(treeResponse, {
+        toValue: 0,
+        ...motion.reactSpring,
+        useNativeDriver: true
+      })
+    ]).start();
   };
 
-  const wateringPan = useMemo(
-    () =>
-      PanResponder.create({
-        onMoveShouldSetPanResponder: (_, gesture) => Math.abs(gesture.dx) + Math.abs(gesture.dy) > 5,
-        onPanResponderMove: (_, gesture) => {
-          wateringPosition.setValue({ x: gesture.dx, y: gesture.dy });
-        },
-        onPanResponderRelease: (_, gesture) => {
-          if (Math.hypot(gesture.dx, gesture.dy) > 36) waterTree();
-          else {
-            Animated.spring(wateringPosition, {
-              toValue: { x: 0, y: 0 },
-              useNativeDriver: true
-            }).start();
-          }
-        },
-        onPanResponderTerminate: waterTree
-      }),
-    [wateringPosition]
-  );
+  // where the plant sits relative to the can, so a flick can be aimed at it
+  const canvasWidth = Math.min(width, 430);
+  const frame = heroFrames[personality][stage];
+  const reach = {
+    dx: (frame.left ?? 0) + frame.width / 2 - (canvasWidth - 154 / 2),
+    dy: frame.top + frame.height / 2 - (420 + 162 / 2)
+  };
 
   const backgroundTranslate = landscapeDrift.interpolate({ inputRange: [0, 1], outputRange: [-5, 5] });
   const treeScale = treeBreath.interpolate({ inputRange: [0, 1], outputRange: [1, 1.018] });
   const treeReactionScale = treeResponse.interpolate({ inputRange: [0, 1], outputRange: [1, 1.055] });
-  const wateringRotate = wateringPosition.x.interpolate({
-    inputRange: [-140, 0, 140],
-    outputRange: ["-18deg", "0deg", "12deg"],
-    extrapolate: "clamp"
-  });
   const promptTranslate = promptEntrance.interpolate({ inputRange: [0, 1], outputRange: [24, 0] });
 
   return (
@@ -392,23 +370,7 @@ function HomeScreen({
         <Image source={plantFor(personality, stage)} resizeMode="contain" style={styles.heroTreeImage} />
       </Animated.View>
 
-      <Animated.View
-        accessibilityHint="Drag it toward the tree"
-        accessibilityLabel={`Water your ${stage}. ${actionsDone} actions noticed.`}
-        style={[
-          styles.heroWateringCan,
-          {
-            transform: [
-              { translateX: wateringPosition.x },
-              { translateY: wateringPosition.y },
-              { rotate: wateringRotate }
-            ]
-          }
-        ]}
-        {...wateringPan.panHandlers}
-      >
-        <WateringCan width="100%" height="100%" />
-      </Animated.View>
+      <Watering reach={reach} onWater={waterTree} style={styles.heroWateringCan} />
 
       <Animated.View
         style={[
