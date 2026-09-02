@@ -31,6 +31,7 @@ import { themes } from "./tokens";
 import { color, elevation, font, motion, radius, space, target, text } from "./tokens";
 import { ThinkingOrb } from "./ThinkingOrb";
 import { Watering } from "./Watering";
+import { HoldButton } from "./HoldButton";
 import Svg, { Circle, Path } from "react-native-svg";
 import KizukuMark from "../assets/kizuku-mark.svg";
 import MeditatingFigure from "../assets/kizuku-meditating.svg";
@@ -562,7 +563,7 @@ function ActionScreen({
         </View>
 
         <View style={styles.inlineActionStack}>
-          <PrimaryButton label="i'll do it now" onPress={onCommit} />
+          <HoldButton label="i'll do it now" onComplete={onCommit} />
           <SecondaryButton label="this doesn't feel right" onPress={onSwap} />
         </View>
       </View>
