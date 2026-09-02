@@ -159,6 +159,7 @@ export function KizukuApp() {
 
           {screen === "worry" ? (
             <WorryScreen
+              personality={personality}
               value={worry}
               onChange={setWorry}
               onBack={() => setScreen("home")}
@@ -167,10 +168,11 @@ export function KizukuApp() {
             />
           ) : null}
 
-          {screen === "thinking" ? <ThinkingScreen onDone={() => setScreen("action")} /> : null}
+          {screen === "thinking" ? <ThinkingScreen personality={personality} onDone={() => setScreen("action")} /> : null}
 
           {screen === "action" ? (
             <ActionScreen
+              personality={personality}
               action={action}
               onBack={() => setScreen("home")}
               onCommit={() => setScreen("committing")}
@@ -180,11 +182,12 @@ export function KizukuApp() {
           ) : null}
 
           {screen === "committing" ? (
-            <CommittingScreen onDone={() => setScreen("reflection")} />
+            <CommittingScreen personality={personality} onDone={() => setScreen("reflection")} />
           ) : null}
 
           {screen === "reflection" ? (
             <ReflectionScreen
+              personality={personality}
               value={reflection}
               onChange={setReflection}
               onBack={() => setScreen("action")}
@@ -445,12 +448,14 @@ function HomeScreen({
 }
 
 function WorryScreen({
+  personality,
   value,
   onChange,
   onBack,
   onContinue,
   onTab
 }: {
+  personality: PersonalityType;
   value: string;
   onChange: (value: string) => void;
   onBack: () => void;
@@ -458,7 +463,7 @@ function WorryScreen({
   onTab: (tab: MainTab) => void;
 }) {
   return (
-    <GradientScreen>
+    <GradientScreen personality={personality}>
       <View style={styles.flowContent}>
         <BackButton onPress={onBack} />
         <View style={styles.flowHeading}>
@@ -495,7 +500,7 @@ function WorryScreen({
           <Text style={styles.privateText}>private · stays on this device</Text>
         </View>
 
-        <View style={styles.bottomAction}>
+        <View style={styles.inlineAction}>
           <PrimaryButton label="get my action" disabled={value.trim().length < 4} onPress={onContinue} />
         </View>
       </View>
@@ -503,7 +508,7 @@ function WorryScreen({
   );
 }
 
-function ThinkingScreen({ onDone }: { onDone: () => void }) {
+function ThinkingScreen({ personality, onDone }: { personality: PersonalityType; onDone: () => void }) {
   const [secondLine, setSecondLine] = useState(false);
   const reduceMotion = useReduceMotionPreference();
   const breathe = useRef(new Animated.Value(0)).current;
@@ -547,7 +552,7 @@ function ThinkingScreen({ onDone }: { onDone: () => void }) {
   const figureLift = breathe.interpolate({ inputRange: [0, 1], outputRange: [2, -2] });
 
   return (
-    <LinearGradient colors={["#E4EDDA", "#C8D9AC"]} style={[styles.flex, styles.center]}>
+    <LinearGradient colors={themes[personality].ritual} style={[styles.flex, styles.center]}>
       <Animated.View style={[styles.thinkingFigure, { transform: [{ translateY: figureLift }, { scale: figureScale }] }]}>
         <MeditatingFigure width="100%" height="100%" />
       </Animated.View>
@@ -558,12 +563,14 @@ function ThinkingScreen({ onDone }: { onDone: () => void }) {
 }
 
 function ActionScreen({
+  personality,
   action,
   onBack,
   onCommit,
   onSwap,
   onTab
 }: {
+  personality: PersonalityType;
   action: (typeof actionTemplates)[number];
   onBack: () => void;
   onCommit: () => void;
@@ -571,7 +578,7 @@ function ActionScreen({
   onTab: (tab: MainTab) => void;
 }) {
   return (
-    <GradientScreen>
+    <GradientScreen personality={personality}>
       <View style={styles.flowContent}>
         <BackButton onPress={onBack} />
         <View style={styles.flowHeading}>
@@ -592,7 +599,7 @@ function ActionScreen({
           </View>
         </View>
 
-        <View style={styles.bottomActionStack}>
+        <View style={styles.inlineActionStack}>
           <PrimaryButton label="i'll do it now" onPress={onCommit} />
           <SecondaryButton label="this doesn't feel right" onPress={onSwap} />
         </View>
@@ -601,7 +608,7 @@ function ActionScreen({
   );
 }
 
-function CommittingScreen({ onDone }: { onDone: () => void }) {
+function CommittingScreen({ personality, onDone }: { personality: PersonalityType; onDone: () => void }) {
   const reduceMotion = useReduceMotionPreference();
   const progress = useRef(new Animated.Value(0)).current;
   const figurePulse = useRef(new Animated.Value(0)).current;
@@ -633,7 +640,7 @@ function CommittingScreen({ onDone }: { onDone: () => void }) {
   const figureScale = figurePulse.interpolate({ inputRange: [0, 1], outputRange: [1, 1.025] });
 
   return (
-    <LinearGradient colors={["#E4EDDA", "#C8D9AC"]} style={styles.flex}>
+    <LinearGradient colors={themes[personality].ritual} style={styles.flex}>
       <View style={styles.commitCopy}>
         <Eyebrow>tending</Eyebrow>
         <Text style={styles.commitTitle}>a small thing,{"\n"}done with attention.</Text>
@@ -649,6 +656,7 @@ function CommittingScreen({ onDone }: { onDone: () => void }) {
 }
 
 function ReflectionScreen({
+  personality,
   value,
   onChange,
   onBack,
@@ -656,6 +664,7 @@ function ReflectionScreen({
   onContinue,
   onTab
 }: {
+  personality: PersonalityType;
   value: string;
   onChange: (value: string) => void;
   onBack: () => void;
@@ -664,7 +673,7 @@ function ReflectionScreen({
   onTab: (tab: MainTab) => void;
 }) {
   return (
-    <GradientScreen>
+    <GradientScreen personality={personality}>
       <View style={styles.flowContent}>
         <BackButton onPress={onBack} />
         <ScrollView
@@ -694,17 +703,17 @@ function ReflectionScreen({
               <Text style={styles.inputNoteText}>your plant grows after you answer this.</Text>
             </View>
           </View>
+          <View style={styles.inlineAction}>
+            <PrimaryButton
+              label="my plant is ready to grow"
+              disabled={value.trim().length < 3}
+              onPress={onContinue}
+            />
+          </View>
           <Pressable onPress={onSkip} style={styles.skipButton}>
             <Text style={styles.skipText}>i didn't do it — that's ok</Text>
           </Pressable>
         </ScrollView>
-        <View style={styles.bottomAction}>
-          <PrimaryButton
-            label="my plant is ready to grow"
-            disabled={value.trim().length < 3}
-            onPress={onContinue}
-          />
-        </View>
       </View>
     </GradientScreen>
   );
@@ -729,20 +738,26 @@ function GrowthScreen({
   }, []);
 
   return (
-    <LinearGradient colors={["#F0F4E6", "#DDDCA5"]} style={[styles.flex, styles.center]}>
-      <Image source={plantFor(personality, grown ? current : previous)} resizeMode="contain" style={styles.growthPlant} />
-      <Text style={styles.growthTitle}>{grown ? "something grew." : "planting…"}</Text>
-      {grown ? (
-        <>
-          <Text style={styles.growthBody}>
-            small actions count. your garden now holds {actionsDone} {actionsDone === 1 ? "moment" : "moments"} of showing up.
-          </Text>
-          <View style={styles.growthButton}>
-            <PrimaryButton label="see my garden" onPress={onDone} />
-          </View>
-        </>
-      ) : null}
-    </LinearGradient>
+    <Pressable accessibilityRole="button" onPress={grown ? onDone : undefined} style={styles.flex}>
+      <LinearGradient colors={themes[personality].growth} style={[styles.flex, styles.center]}>
+        <Image
+          source={plantFor(personality, grown ? current : previous)}
+          resizeMode="contain"
+          style={styles.growthPlant}
+        />
+        {grown ? (
+          <>
+            <Text style={styles.growthTitle}>something grew.</Text>
+            <Text style={styles.growthBody}>
+              your garden now holds {actionsDone} {actionsDone === 1 ? "moment" : "moments"} of showing up.
+              tap anywhere to continue.
+            </Text>
+          </>
+        ) : (
+          <Text style={styles.growthTitle}>planting…</Text>
+        )}
+      </LinearGradient>
+    </Pressable>
   );
 }
 
@@ -1006,7 +1021,7 @@ function QuizScreen({
           })}
         </View>
 
-        <View style={styles.bottomAction}>
+        <View style={styles.inlineAction}>
           <PrimaryButton label={last ? "see my result" : "next"} disabled={!selected} onPress={advance} />
         </View>
       </View>
@@ -1056,8 +1071,18 @@ function RevealScreen({
   );
 }
 
-function GradientScreen({ children }: { children: React.ReactNode }) {
-  return <LinearGradient colors={["#D4E2C4", "#DDD9A8"]} style={styles.flex}>{children}</LinearGradient>;
+function GradientScreen({
+  personality,
+  children
+}: {
+  personality: PersonalityType;
+  children: React.ReactNode;
+}) {
+  return (
+    <LinearGradient colors={themes[personality].ritual} style={styles.flex}>
+      {children}
+    </LinearGradient>
+  );
 }
 
 function Eyebrow({ children }: { children: React.ReactNode }) {
@@ -1295,8 +1320,11 @@ const styles = StyleSheet.create({
   inputNoteText: { ...text.caption, color: color.stone[500] },
   privateLine: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 5, marginTop: space.md },
   privateText: { fontFamily: font.sansSemibold, fontSize: 11, lineHeight: 15, letterSpacing: 0.4, color: color.forest[500] },
+  /** the reveal scrolls, so its action stays a persistent footer */
   bottomAction: { position: "absolute", left: space.gutter, right: space.gutter, bottom: space.lg },
-  bottomActionStack: { position: "absolute", left: space.gutter, right: space.gutter, bottom: space.lg, gap: space.sm },
+  /** everywhere else the action follows the card it belongs to */
+  inlineAction: { marginTop: space.lg },
+  inlineActionStack: { marginTop: space.lg, gap: space.sm },
 
   // controls
   primaryButton: {
@@ -1350,15 +1378,14 @@ const styles = StyleSheet.create({
   actionNote: { borderTopWidth: 1, borderStyle: "dashed", borderColor: color.line, paddingTop: space.sm, marginTop: space.md },
 
   // reflection
-  reflectionScroll: { paddingTop: space.lg, paddingBottom: 120 },
+  reflectionScroll: { paddingTop: space.lg, paddingBottom: space.lg },
   skipButton: { alignSelf: "center", paddingVertical: space.md, paddingHorizontal: space.sm, minHeight: target.min },
   skipText: { ...text.label, fontFamily: font.sans, color: color.stone[700], textDecorationLine: "underline" },
 
   // growth
-  growthPlant: { width: 268, height: 330 },
-  growthTitle: { ...text.displayLg, color: color.forest[600], marginTop: space.sm },
-  growthBody: { ...text.bodyLg, color: color.stone[700], textAlign: "center", maxWidth: 300, marginTop: space.sm },
-  growthButton: { position: "absolute", left: space.lg, right: space.lg, bottom: 54 },
+  growthPlant: { width: 300, height: 380 },
+  growthTitle: { fontFamily: font.serifItalic, fontSize: 19, lineHeight: 28, color: color.forest[600], marginTop: space.lg },
+  growthBody: { ...text.caption, color: color.stone[700], textAlign: "center", maxWidth: 280, marginTop: space.xs },
 
   // pattern
   tabScroll: { paddingHorizontal: space.gutter, paddingTop: space.xl, paddingBottom: 108 },

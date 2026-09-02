@@ -51,10 +51,32 @@ export const color = {
  * edge and an ink — nothing else changes between them.
  */
 export const themes = {
-  optimizer: { surface: "#ECD858", raised: "#E1CC48", edge: "#D4BE30", ink: "#4A3800" },
-  seeker: { surface: "#A4C8DE", raised: "#90B6D1", edge: "#7AAAC8", ink: "#0E2C48" },
-  /** ink borrowed from forest/600: the wireframe's #2C5828 measured 4.32:1 */
-  planner: { surface: "#A4C49C", raised: "#8DB186", edge: "#78A06C", ink: color.forest[600] }
+  optimizer: {
+    surface: "#ECD858",
+    raised: "#E1CC48",
+    edge: "#D4BE30",
+    ink: "#4A3800",
+    /** the ritual gradient, sampled from the hi-fi frames */
+    ritual: ["#DCDCA4", "#D3E0C0"],
+    growth: ["#EDF2E4", "#DDDBA5"]
+  },
+  seeker: {
+    surface: "#A4C8DE",
+    raised: "#90B6D1",
+    edge: "#7AAAC8",
+    ink: "#0E2C48",
+    ritual: ["#C1DAD4", "#BEC6A3"],
+    growth: ["#EDF2E4", "#C2DAD5"]
+  },
+  planner: {
+    surface: "#A4C49C",
+    raised: "#8DB186",
+    edge: "#78A06C",
+    /** ink borrowed from forest/600: the wireframe's #2C5828 measured 4.32:1 */
+    ink: color.forest[600],
+    ritual: ["#E7F2DF", "#C1C8A4"],
+    growth: ["#EDF2E4", "#D3E5CC"]
+  }
 } as const;
 
 export type ThemeName = keyof typeof themes;
