@@ -60,6 +60,15 @@ const assets = {
   background: require("../assets/garden-background.png")
 };
 
+/**
+ * The ragged top of a slip torn from a pad. Stretched to the card's width with
+ * preserveAspectRatio="none", so the peaks stay put whatever the screen is.
+ */
+const TORN_EDGE =
+  "M0 13 L0 5 L17 1.5 L36 6.5 L54 1 L73 5 L91 1.5 L110 7 L128 1 " +
+  "L147 4.5 L165 1.5 L184 6.5 L202 1 L221 5 L239 1.5 L258 6 L276 1.5 " +
+  "L300 4 L300 13 Z";
+
 /** Every type's own plant, both states, straight from the hi-fi file. */
 const plants = {
   optimizer: {
@@ -543,29 +552,19 @@ function WorryScreen({
           <Text style={styles.flowTitle}>what future worry is on your mind right now?</Text>
         </View>
 
-        <View style={styles.inputCard}>
-          <View style={styles.inputRow}>
-            <TextInput
-              accessibilityLabel="Future worry"
-              autoFocus
-              multiline
-              onChangeText={onChange}
-              placeholder="write anything. this stays private."
-              placeholderTextColor={color.stone[500]}
-              style={styles.input}
-              textAlignVertical="top"
-              value={value}
-            />
-            <View style={styles.micButton}>
-              <Icon name="mic" size={17} color={color.stone[700]} />
-            </View>
-          </View>
-          <View style={styles.inputNote}>
-            <Text style={styles.inputNoteText}>
-              be specific. the more honest you are, the better your action will be.
-            </Text>
-          </View>
-        </View>
+        <Slip note="be specific. the more honest you are, the better your action will be.">
+          <TextInput
+            accessibilityLabel="Future worry"
+            autoFocus
+            multiline
+            onChangeText={onChange}
+            placeholder="write anything. this stays private."
+            placeholderTextColor={color.stone[500]}
+            style={styles.input}
+            textAlignVertical="top"
+            value={value}
+          />
+        </Slip>
 
         <View style={styles.privateLine}>
           <Icon name="lock" size={12} color={color.forest[500]} />
@@ -767,26 +766,18 @@ function ReflectionScreen({
         >
           <Eyebrow>you came back</Eyebrow>
           <Text style={styles.flowTitle}>what happened when you did it?</Text>
-          <View style={styles.inputCard}>
-            <View style={styles.inputRow}>
-              <TextInput
-                accessibilityLabel="Reflection"
-                multiline
-                onChangeText={onChange}
-                placeholder="no judgement. just what happened."
-                placeholderTextColor={color.stone[500]}
-                style={styles.input}
-                textAlignVertical="top"
-                value={value}
-              />
-              <View style={styles.micButton}>
-                <Icon name="mic" size={17} color={color.stone[700]} />
-              </View>
-            </View>
-            <View style={styles.inputNote}>
-              <Text style={styles.inputNoteText}>your plant grows after you answer this.</Text>
-            </View>
-          </View>
+          <Slip note="your plant grows after you answer this.">
+            <TextInput
+              accessibilityLabel="Reflection"
+              multiline
+              onChangeText={onChange}
+              placeholder="no judgement. just what happened."
+              placeholderTextColor={color.stone[500]}
+              style={styles.input}
+              textAlignVertical="top"
+              value={value}
+            />
+          </Slip>
           <View style={styles.inlineAction}>
             <PrimaryButton
               label="my plant is ready to grow"
@@ -1303,6 +1294,45 @@ function RevealScreen({
  * the content rises over it. Animating the gradient would be a paint animation
  * and could not use the native driver.
  */
+/**
+ * A slip torn from a pad — the surface for both screens that ask you to write
+ * something down. Ragged top where it came away, ruled lines to write on, and
+ * one fold above the footer. clip-path does not exist in React Native, so the
+ * tear is an SVG filled with the paper colour and stretched to the card width.
+ */
+function Slip({ children, note }: { children: React.ReactNode; note: string }) {
+  return (
+    <View style={styles.slip}>
+      <Svg width="100%" height={13} viewBox="0 0 300 13" preserveAspectRatio="none">
+        <Path d={TORN_EDGE} fill={color.paper.card} />
+      </Svg>
+
+      <View style={styles.slipBody}>
+        <View pointerEvents="none" style={StyleSheet.absoluteFill}>
+          {[0, 1, 2].map((line) => (
+            <View key={line} style={[styles.rule, { top: 34 * (line + 1) }]} />
+          ))}
+        </View>
+
+        <View style={styles.inputRow}>
+          {children}
+          <View style={styles.micButton}>
+            <Icon name="mic" size={17} color={color.stone[700]} />
+          </View>
+        </View>
+      </View>
+
+      {/* the fold: a crease, not a border — shadow above, catchlight below */}
+      <View style={styles.foldShadow} />
+      <View style={styles.foldLight} />
+
+      <View style={styles.slipFooter}>
+        <Text style={styles.inputNoteText}>{note}</Text>
+      </View>
+    </View>
+  );
+}
+
 function GradientScreen({
   personality,
   children
@@ -1564,26 +1594,42 @@ const styles = StyleSheet.create({
   flowHeading: { marginTop: space.lg },
   eyebrow: { ...text.eyebrow, color: color.forest[500] },
   flowTitle: { ...text.title, color: color.forest[600], marginTop: space.xs },
-  inputCard: {
-    minHeight: 194,
+  /* the slip: no top radius and no border — a torn edge is the top boundary */
+  slip: {
     borderRadius: radius.card,
-    backgroundColor: "rgba(255,253,248,0.96)",
-    borderWidth: 1,
-    borderColor: color.hairline,
-    padding: space.gutter,
+    borderTopLeftRadius: 0,
+    borderTopRightRadius: 0,
+    backgroundColor: "transparent",
     marginTop: space.lg,
     ...elevation.raised
   },
+  slipBody: {
+    minHeight: 150,
+    backgroundColor: color.paper.card,
+    paddingHorizontal: space.gutter,
+    paddingTop: 11
+  },
+  rule: { position: "absolute", left: space.gutter, right: space.gutter, height: 1, backgroundColor: "rgba(94,85,72,0.14)" },
+  foldShadow: { height: 1, backgroundColor: "rgba(94,85,72,0.20)" },
+  foldLight: { height: 6, backgroundColor: "rgba(255,255,255,0.65)" },
+  slipFooter: {
+    backgroundColor: color.paper.card,
+    paddingHorizontal: space.gutter,
+    paddingTop: space.xs,
+    paddingBottom: space.md,
+    borderBottomLeftRadius: radius.card,
+    borderBottomRightRadius: radius.card
+  },
   inputRow: { flexDirection: "row", alignItems: "flex-start", gap: space.xs, flex: 1 },
+  /* lineHeight is the rule pitch, not the type's own 23 — on ruled paper the
+     writing sits on the line, so the two have to be the same number */
   input: {
     flex: 1,
-    minHeight: 116,
+    minHeight: 102,
     ...text.body,
+    lineHeight: 34,
     color: color.stone[900],
     padding: 0,
-    // the web target draws the browser's blue focus ring, which is neither the
-    // brand's colour nor a colour anywhere in the system. Replaced rather than
-    // removed: the ring still shows, it just belongs to the product.
     ...Platform.select({
       web: { outlineColor: color.forest[500], outlineWidth: 2, outlineOffset: 4 },
       default: {}
@@ -1597,7 +1643,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center"
   },
-  inputNote: { borderTopWidth: 1, borderStyle: "dashed", borderColor: color.line, paddingTop: space.sm, marginTop: space.sm },
   inputNoteText: { ...text.caption, color: color.stone[500] },
   privateLine: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 5, marginTop: space.md },
   privateText: { fontFamily: font.sansSemibold, fontSize: 11, lineHeight: 15, letterSpacing: 0.4, color: color.forest[500] },
