@@ -33,6 +33,8 @@ export const actionTemplates = [
 export const personalityTypes = {
   optimizer: {
     name: "the optimiser",
+    /** the plant this type grows, and the thing they are naming */
+    plant: "spiral tree",
     quote: "i need to know this will be worth it before i try.",
     pattern:
       "you measure today by what it builds toward. the future never quite arrives — there's always another milestone between here and enough.",
@@ -40,6 +42,8 @@ export const personalityTypes = {
   },
   seeker: {
     name: "the seeker",
+    /** the plant this type grows, and the thing they are naming */
+    plant: "crystal tree",
     quote: "i need my life to mean something — but i'm not sure it does.",
     pattern:
       "you're not afraid of failure. you're afraid of becoming someone whose life didn't mean what it could have.",
@@ -47,6 +51,8 @@ export const personalityTypes = {
   },
   planner: {
     name: "the planner",
+    /** the plant this type grows, and the thing they are naming */
+    plant: "strata tree",
     quote: "i need to be prepared for everything that could go wrong.",
     pattern:
       "you don't avoid commitment because you're indecisive. committing fully feels like leaving yourself exposed. so you cover all bases.",

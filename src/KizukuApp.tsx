@@ -44,6 +44,7 @@ type Screen =
   | "welcome"
   | "quiz"
   | "reveal"
+  | "naming"
   | "home"
   | "worry"
   | "thinking"
@@ -119,6 +120,7 @@ export function KizukuApp() {
   const [entries, setEntries] = useState<Entry[]>([]);
   const [hydrated, setHydrated] = useState(false);
   const [onboarded, setOnboarded] = useState(false);
+  const [plantName, setPlantName] = useState<string>("");
 
   const todayCompleted = lastCompletedOn === todayKey();
 
@@ -146,6 +148,7 @@ export function KizukuApp() {
         setEntries(saved.entries);
         setLastCompletedOn(saved.lastCompletedOn);
         setOnboarded(saved.onboarded);
+        setPlantName(saved.plantName ?? "");
         if (saved.onboarded) setScreen("home");
       }
       setHydrated(true);
@@ -172,9 +175,10 @@ export function KizukuApp() {
       actionsDone,
       entries,
       lastCompletedOn,
-      onboarded
+      onboarded,
+      plantName: plantName || undefined
     });
-  }, [hydrated, devJump, onboarded, personality, actionsDone, entries, lastCompletedOn]);
+  }, [hydrated, devJump, onboarded, personality, actionsDone, entries, lastCompletedOn, plantName]);
 
   /**
    * Dev-only: jump straight to a screen. Used for capturing the real UI and
@@ -241,7 +245,17 @@ export function KizukuApp() {
           ) : null}
 
           {screen === "reveal" ? (
-            <RevealScreen personality={personality} onDone={() => setScreen("home")} />
+            <RevealScreen personality={personality} onDone={() => setScreen("naming")} />
+          ) : null}
+
+          {screen === "naming" ? (
+            <NamingScreen
+              personality={personality}
+              onDone={(name) => {
+                setPlantName(name);
+                setScreen("home");
+              }}
+            />
           ) : null}
 
           {screen === "home" ? (
@@ -249,6 +263,7 @@ export function KizukuApp() {
               personality={personality}
               actionsDone={actionsDone}
               todayCompleted={todayCompleted}
+              plantName={plantName}
               onStart={() => {
                 setWorry("");
                 setReflection("");
@@ -344,6 +359,7 @@ export function KizukuApp() {
                         setActionsDone(0);
                         setEntries([]);
                         setLastCompletedOn(null);
+                        setPlantName("");
                         setScreen("home");
                       }
                     }
@@ -362,6 +378,7 @@ function HomeScreen({
   personality,
   actionsDone,
   todayCompleted,
+  plantName,
   onStart,
   onTab,
   onProfile
@@ -369,6 +386,7 @@ function HomeScreen({
   personality: PersonalityType;
   actionsDone: number;
   todayCompleted: boolean;
+  plantName: string;
   onStart: () => void;
   onTab: (tab: MainTab) => void;
   onProfile: () => void;
@@ -476,7 +494,7 @@ function HomeScreen({
             <KizukuMark width={34} height={34} />
             <Text style={styles.brandName}>kizuku</Text>
           </View>
-          <Text style={styles.homeTitle}>{personalityTypes[personality].name}</Text>
+          <Text style={styles.homeTitle}>{plantName || personalityTypes[personality].name}</Text>
         </View>
         <IconButton icon="person" label="Open profile" onPress={onProfile} />
       </View>
@@ -1558,6 +1576,73 @@ function Slip({
   );
 }
 
+/**
+ * Name your tree.
+ *
+ * From the plant-care pin, where the plants are called Janie and Gloria rather
+ * than "Plant 1". A named thing is one you have a relationship with, and the
+ * whole product rests on caring what happens to this tree.
+ *
+ * Skippable, and skipping is not a lesser path — some people will not want to
+ * name it, and being nagged on day one is the opposite of what this app is for.
+ */
+function NamingScreen({
+  personality,
+  onDone
+}: {
+  personality: PersonalityType;
+  onDone: (name: string) => void;
+}) {
+  const [name, setName] = useState("");
+  const theme = themes[personality];
+  const type = personalityTypes[personality];
+
+  return (
+    <View style={[styles.flex, { backgroundColor: theme.surface }]}>
+      <ScrollView contentContainerStyle={styles.namingContent} showsVerticalScrollIndicator={false}>
+        <Image
+          accessibilityIgnoresInvertColors
+          resizeMode="contain"
+          source={plantFor(personality, "seed")}
+          style={styles.namingSeed}
+        />
+
+        <Text style={[styles.eyebrow, { color: theme.ink }]}>your {type.plant}</Text>
+        <Text style={[styles.namingTitle, { color: theme.ink }]}>what will you call it?</Text>
+        <Text style={[styles.namingBody, { color: theme.ink }]}>
+          you will be tending this one for a while. a name makes it yours — but it is fine to leave
+          it as it is.
+        </Text>
+
+        <View style={styles.namingField}>
+          <TextInput
+            accessibilityLabel="Name your plant"
+            autoCapitalize="words"
+            maxLength={24}
+            onChangeText={setName}
+            onSubmitEditing={() => onDone(name.trim())}
+            placeholder="give it a name"
+            placeholderTextColor={color.stone[400]}
+            returnKeyType="done"
+            style={styles.namingInput}
+            value={name}
+          />
+        </View>
+      </ScrollView>
+
+      <View style={styles.bottomAction}>
+        <PrimaryButton
+          label={name.trim() ? `plant ${name.trim()}` : "plant it"}
+          onPress={() => onDone(name.trim())}
+        />
+        <Pressable onPress={() => onDone("")} style={styles.namingSkip}>
+          <Text style={[styles.namingSkipText, { color: theme.ink }]}>i will name it later</Text>
+        </Pressable>
+      </View>
+    </View>
+  );
+}
+
 function GradientScreen({
   personality,
   children
@@ -1805,6 +1890,22 @@ const styles = StyleSheet.create({
 
   // type reveal
   revealContent: { paddingHorizontal: space.lg, paddingTop: space.xxl, paddingBottom: 108 },
+  namingContent: { paddingHorizontal: space.gutter, paddingTop: space.xxxl, paddingBottom: 140, alignItems: "flex-start" },
+  namingSeed: { width: 116, height: 132, alignSelf: "center", marginBottom: space.lg },
+  namingTitle: { ...text.displayLg, marginTop: space.xxs },
+  namingBody: { ...text.bodyLg, opacity: 0.78, marginTop: space.sm },
+  namingField: {
+    alignSelf: "stretch",
+    marginTop: space.lg,
+    backgroundColor: color.paper.card,
+    borderRadius: radius.card,
+    paddingHorizontal: space.md,
+    ...elevation.lifted
+  },
+  /* the name is written in the hand, like everything else the user authors */
+  namingInput: { ...text.journal, fontSize: 26, lineHeight: 40, color: color.stone[900], height: 68, padding: 0 },
+  namingSkip: { alignSelf: "center", paddingVertical: space.sm, paddingHorizontal: space.md },
+  namingSkipText: { ...text.caption, opacity: 0.72, textDecorationLine: "underline" },
   revealEmblem: { width: 168, height: 208, alignSelf: "center", marginBottom: space.xl },
   revealPlant: { width: "100%", height: "100%" },
   hydrating: { backgroundColor: color.paper[50] },

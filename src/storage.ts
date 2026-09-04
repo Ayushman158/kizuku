@@ -38,6 +38,9 @@ export type StoredState = {
   actionsDone: number;
   /** newest last; the journal reads this */
   entries: Entry[];
+  /** what the user called their tree. Optional: installs from before naming
+      existed are still valid and simply have no name yet. */
+  plantName?: string;
   /** "YYYY-MM-DD" in local time, or null if nothing has been completed */
   lastCompletedOn: string | null;
   onboarded: boolean;
@@ -74,6 +77,7 @@ function isValid(value: unknown): value is StoredState {
     Array.isArray(state.entries) &&
     state.entries.every(isEntry) &&
     (state.lastCompletedOn === null || typeof state.lastCompletedOn === "string") &&
+    (state.plantName === undefined || typeof state.plantName === "string") &&
     typeof state.onboarded === "boolean"
   );
 }
