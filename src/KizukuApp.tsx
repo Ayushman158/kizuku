@@ -1177,24 +1177,47 @@ function TypeEmblem({ personality, ink, edge }: { personality: PersonalityType; 
   );
 }
 
+/**
+ * A letter, not a splash.
+ *
+ * The screen used to state a proverb at you. It says something now, from
+ * someone, to you — and it is signed in the same hand the journal is set in, so
+ * the first handwriting you see is ours and the next is your own. The quote it
+ * replaced is kept as the line the letter closes on; it was the best sentence
+ * on the screen and it earns more as a sign-off than as a headline.
+ */
 function WelcomeScreen({ onBegin }: { onBegin: () => void }) {
   return (
     <View style={[styles.flex, styles.paperScreen]}>
-      <View style={styles.welcomeContent}>
-        <View style={styles.brandRow}>
-          <KizukuMark width={34} height={34} />
-          <Text style={styles.brandName}>kizuku</Text>
+      <ScrollView contentContainerStyle={styles.welcomeContent} showsVerticalScrollIndicator={false}>
+        <View style={styles.welcomeMark}>
+          <KizukuMark width={30} height={30} />
         </View>
-        <Text style={styles.welcomeQuote}>
+
+        <Text style={styles.welcomeGreeting}>hello,</Text>
+
+        <Text style={styles.welcomeLetter}>
+          this is a small app for the kind of worry that lives in the future — the meeting that
+          has not happened, the message you have not sent, the year you cannot picture yet.
+        </Text>
+        <Text style={styles.welcomeLetter}>
+          it will not ask you to feel better. it asks you for one worry, gives you{" "}
+          <Text style={styles.welcomeEmphasis}>one small thing to do</Text>, and grows you a tree
+          when you do it. that is the whole app.
+        </Text>
+        <Text style={styles.welcomeLetter}>
+          there are no streaks here. a day you miss is a thinner ring, never a reset.
+        </Text>
+
+        <Text style={styles.welcomeSignoff}>
           you cannot plan a forest.{"\n"}you can only plant a tree.
         </Text>
-        <Text style={styles.welcomeBody}>
-          one action a day, based on what's worrying you. a garden that grows each time you act.
-        </Text>
-      </View>
+        <Text style={styles.welcomeSignature}>Ayushman</Text>
+      </ScrollView>
+
       <View style={styles.welcomeAction}>
-        <PrimaryButton label="begin" onPress={onBegin} />
-        <Text style={styles.welcomeNote}>no account needed · takes 60 seconds</Text>
+        <PrimaryButton label="plant my first tree" onPress={onBegin} />
+        <Text style={styles.welcomeNote}>no account · nothing leaves your phone · 60 seconds</Text>
       </View>
     </View>
   );
@@ -1663,11 +1686,26 @@ const styles = StyleSheet.create({
   inverseMuted: { color: color.onDarkMuted },
 
   // onboarding
-  welcomeContent: { flex: 1, paddingHorizontal: space.gutter, justifyContent: "center", gap: space.lg },
-  welcomeQuote: { ...text.display, color: color.forest[600], marginTop: space.md },
-  welcomeBody: { ...text.bodyLg, color: color.stone[700], maxWidth: 320 },
+  welcomeContent: {
+    flexGrow: 1,
+    paddingHorizontal: space.gutter,
+    paddingTop: space.xxxl,
+    paddingBottom: space.lg,
+    justifyContent: "center",
+    gap: space.md
+  },
+  welcomeMark: { alignSelf: "flex-start", marginBottom: space.xs, opacity: 0.9 },
+  welcomeGreeting: { ...text.title, color: color.forest[600] },
+  /* the letter is set in the reading serif, not the interface sans — it is
+     prose from a person, not interface copy */
+  welcomeLetter: { ...text.bodyLg, color: color.stone[700] },
+  welcomeEmphasis: { fontFamily: font.serif, color: color.forest[500] },
+  welcomeSignoff: { ...text.bodyLg, fontFamily: font.serifItalic, color: color.stone[500], marginTop: space.sm },
+  /* the same hand the journal is set in: ours first, then theirs */
+  welcomeSignature: { ...text.journal, fontSize: 28, lineHeight: 34, color: color.forest[500] },
   welcomeAction: { paddingHorizontal: space.gutter, paddingBottom: space.xxl, gap: space.sm },
   welcomeNote: { ...text.caption, color: color.stone[500], textAlign: "center" },
+  welcomeQuote: { ...text.display, color: color.forest[600] },
   quizHead: {
     flexDirection: "row",
     alignItems: "center",
