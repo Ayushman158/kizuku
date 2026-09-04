@@ -1,6 +1,6 @@
 # 005 — Make the app remember you
 
-- **Status**: TODO
+- **Status**: DONE — implemented and verified on 2026-09-04 (web). Device pass still owed.
 - **Commit**: 4ad1ed7
 - **Severity**: HIGH
 - **Category**: Product — the gap between "the loop runs" and "shipped"
@@ -270,3 +270,54 @@ if (__DEV__ && typeof window !== "undefined" && window.location.search) return;
 - The day rolls over correctly at local midnight.
 - Worry and reflection text appear nowhere in storage.
 - No welcome-screen flash on a returning launch, and no crash on a corrupt payload.
+
+---
+
+## Execution record (2026-09-04)
+
+`@react-native-async-storage/async-storage@2.2.0` installed via `npx expo install`; new
+`src/storage.ts`; `src/KizukuApp.tsx` wired.
+
+### This plan contained a bug, and testing caught it
+
+*Target* said **"`onboarded` is set true here because reaching a state worth saving means the
+quiz is done. Do not add a separate setter."** That is wrong. The save effect fires as soon
+as hydration completes, so a brand-new user was written as `onboarded: true` before answering
+anything — and on the next launch went straight to the garden, never seeing the welcome
+screen or the quiz again. Reproduced on a cleared install: it landed on
+*"what's on your mind today?"* with a stored row already present.
+
+`onboarded` is now real state, set in `finishQuiz`, and the save effect is additionally
+gated on it — so **nothing at all is written until the quiz is finished**. Verified: a
+cleared install shows the welcome screen and `getItem` returns `null`.
+
+### Step 8 adapted
+
+The plan said to add a "start over" row. `ProfileScreen:1028` already had one, labelled
+*"reset prototype"*. It was reused rather than duplicated, and its destination (`home`, type
+kept) was left alone — *"retake personality quiz"* directly above is the control for changing
+type. What did change: it now calls `clearState()`, and it is behind an `Alert` with a
+destructive style, because it went from clearing memory that was about to be lost anyway to
+deleting something the user has actually accumulated.
+
+### Passed
+
+- `npx tsc --noEmit` → 0.
+- **Privacy boundary holds**: stripping comments, `worry` and `reflection` appear nowhere in
+  the code of `src/storage.ts` — only in the comments explaining their absence.
+- `setTodayCompleted` no longer exists; `todayCompleted` is derived only.
+- `todayKey` is local, not UTC. Proved in `Asia/Calcutta`: at 00:30 on 5 Sep it returns
+  `2026-09-05` where `toISOString()` returns `2026-09-04`.
+- **Fresh install** → welcome screen, nothing in storage.
+- **Returning user** → straight to the garden: seeker, grown crystal tree at 5 actions,
+  *"today is tended."*, no welcome flash.
+- **The rollover, which is what Trap 1 was about** → with `lastCompletedOn` set to yesterday,
+  the card returns to *"what's on your mind today?"* while type and plant stage survive.
+- **Corrupt payload** (`"{oops not json"`) → degrades to a fresh install, no crash.
+
+### Not verified here — still owed
+
+- A real force-quit relaunch on device. The web build uses localStorage via AsyncStorage's
+  web shim; the native path is the same API but was not exercised.
+- The `Alert` confirm on the reset — `Alert.alert` is a no-op stub on react-native-web, so
+  the dialog itself was never shown.

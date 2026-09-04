@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   AccessibilityInfo,
+  Alert,
   Animated,
   Easing,
   Image,
@@ -26,6 +27,7 @@ import {
   type GrowthStage,
   type PersonalityType
 } from "./productModel";
+import { clearState, loadState, saveState, todayKey } from "./storage";
 import { themes } from "./tokens";
 import { color, elevation, font, motion, radius, space, target, text } from "./tokens";
 import { Icon, type IconName } from "./Icon";
@@ -97,9 +99,19 @@ export function KizukuApp() {
   const [worry, setWorry] = useState("");
   const [reflection, setReflection] = useState("");
   const [actionsDone, setActionsDone] = useState(0);
-  const [todayCompleted, setTodayCompleted] = useState(false);
+  /*
+   * A date, not a flag. As a boolean this could only ever be set true, so a
+   * persisted "today is tended." would have been permanent and the app would
+   * never have offered another action again. Stored as a local YYYY-MM-DD and
+   * compared against today, it rolls over at midnight on its own.
+   */
+  const [lastCompletedOn, setLastCompletedOn] = useState<string | null>(null);
   const [actionIndex, setActionIndex] = useState(0);
   const [history, setHistory] = useState<string[]>([]);
+  const [hydrated, setHydrated] = useState(false);
+  const [onboarded, setOnboarded] = useState(false);
+
+  const todayCompleted = lastCompletedOn === todayKey();
 
   const action = actionTemplates[actionIndex % actionTemplates.length]!;
 
@@ -110,6 +122,50 @@ export function KizukuApp() {
   };
 
   const openTab = (tab: MainTab) => setScreen(tab);
+
+  /** True while a __DEV__ URL jump is driving state, so it is never written back. */
+  const devJump = __DEV__ && typeof window !== "undefined" && !!window.location.search;
+
+  // Read once on launch. A returning user goes straight to the garden.
+  useEffect(() => {
+    let cancelled = false;
+    loadState().then((saved) => {
+      if (cancelled) return;
+      if (saved) {
+        setPersonality(saved.personality);
+        setActionsDone(saved.actionsDone);
+        setHistory(saved.history);
+        setLastCompletedOn(saved.lastCompletedOn);
+        setOnboarded(saved.onboarded);
+        if (saved.onboarded) setScreen("home");
+      }
+      setHydrated(true);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  /*
+   * Write on change, but never before the read resolves — without the guard the
+   * first render would put actionsDone: 0 over a real save. The dev jump is
+   * excluded too: ?p=seeker&n=9 must not overwrite somebody's actual install.
+   */
+  useEffect(() => {
+    // Nothing is written until the quiz is finished. onboarded has to be real
+    // state, not a hardcoded true: writing true on first paint marked a brand
+    // new user as onboarded before they had answered anything, and they never
+    // saw the welcome screen again.
+    if (!hydrated || devJump || !onboarded) return;
+    saveState({
+      version: 1,
+      personality,
+      actionsDone,
+      history,
+      lastCompletedOn,
+      onboarded
+    });
+  }, [hydrated, devJump, onboarded, personality, actionsDone, history, lastCompletedOn]);
 
   /**
    * Dev-only: jump straight to a screen. Used for capturing the real UI and
@@ -140,15 +196,26 @@ export function KizukuApp() {
   const finishQuiz = (given: PersonalityType[]) => {
     setAnswers(given);
     setPersonality(typeFrom(given));
+    setOnboarded(true);
     setScreen("reveal");
   };
 
   const completeReflection = () => {
     setActionsDone((count) => count + 1);
     setHistory((tags) => [...tags, action.tag]);
-    setTodayCompleted(true);
+    setLastCompletedOn(todayKey());
     setScreen("growth");
   };
+
+  // A read is a few milliseconds; anything more elaborate would flash harder
+  // than it hides. Never render "welcome" before we know whether they are new.
+  if (!hydrated) {
+    return (
+      <View style={styles.stage}>
+        <View style={[styles.device, styles.hydrating]} />
+      </View>
+    );
+  }
 
   return (
     <View style={styles.stage}>
@@ -175,7 +242,6 @@ export function KizukuApp() {
               onStart={() => {
                 setWorry("");
                 setReflection("");
-                setTodayCompleted(false);
                 setScreen("worry");
               }}
               onTab={openTab}
@@ -218,7 +284,7 @@ export function KizukuApp() {
               onChange={setReflection}
               onBack={() => setScreen("action")}
               onSkip={() => {
-                setTodayCompleted(true);
+                setLastCompletedOn(todayKey());
                 setScreen("home");
               }}
               onContinue={completeReflection}
@@ -246,12 +312,32 @@ export function KizukuApp() {
               onRetake={startQuiz}
               onTab={openTab}
               onReset={() => {
-                setWorry("");
-                setReflection("");
-                setActionsDone(0);
-                setHistory([]);
-                setTodayCompleted(false);
-                setScreen("home");
+                /*
+                 * This used to clear memory that was about to be lost anyway.
+                 * Now it deletes something the user has actually accumulated, so
+                 * it asks first. The type is kept — "retake personality quiz"
+                 * directly above is the control for changing that.
+                 */
+                Alert.alert(
+                  "Reset your progress?",
+                  "Your plant goes back to a seed and your history is cleared. Your type stays. This cannot be undone.",
+                  [
+                    { text: "Keep it", style: "cancel" },
+                    {
+                      text: "Reset",
+                      style: "destructive",
+                      onPress: () => {
+                        clearState();
+                        setWorry("");
+                        setReflection("");
+                        setActionsDone(0);
+                        setHistory([]);
+                        setLastCompletedOn(null);
+                        setScreen("home");
+                      }
+                    }
+                  ]
+                );
               }}
             />
           ) : null}
@@ -1451,6 +1537,7 @@ const styles = StyleSheet.create({
   revealContent: { paddingHorizontal: space.lg, paddingTop: space.xxl, paddingBottom: 108 },
   revealEmblem: { width: 168, height: 208, alignSelf: "center", marginBottom: space.xl },
   revealPlant: { width: "100%", height: "100%" },
+  hydrating: { backgroundColor: color.paper[50] },
   revealName: { ...text.displayLg, marginTop: space.xs },
   revealQuote: { fontFamily: font.serifItalic, fontSize: 17, lineHeight: 26, marginTop: space.sm },
   /*

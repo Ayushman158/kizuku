@@ -10,13 +10,12 @@ originating conversation should be able to run it end to end.
 | [002](002-native-driver-committing.md) | Take the committing progress bar off the JS thread | HIGH | Performance + Cohesion | **DONE** |
 | [003](003-ritual-screen-entrances.md) | Stop the daily ritual cutting between animated and static screens | MEDIUM | Cohesion & tokens | **DONE** |
 | [004](004-reveal-ceremony.md) | Give the type reveal the one moment it only gets once | MEDIUM | Purpose & frequency | **DONE** |
-| [005](005-persistence.md) | Make the app remember you | HIGH | Product | TODO |
+| [005](005-persistence.md) | Make the app remember you | HIGH | Product | **DONE** |
 
 ## Recommended execution order
 
-**005 next.** 002, 003 and 004 are done. 001 is parked (see below), so persistence is the
-open work with the most leverage: it is the difference between a demo that resets and an app
-that remembers you, and it is what "In development" on the portfolio is really pointing at.
+**Everything except 001 is done.** 002, 003, 004 and 005 have all landed; 001 is parked (see
+below). What remains is not a plan — it is the device pass listed at the bottom of this file.
 
 - **002 first.** It is the only HIGH, it is the smallest change in the set, and the fix is
   already written in this repo at `src/HoldButton.tsx:113-115` — a pattern applied once and
@@ -69,3 +68,7 @@ in one pass:
    entrance never had anything to fight.
 3. **Smoothness at the committing → growth handoff** (002) — the reason 002 was HIGH. The JS
    thread is not contended on desktop the way it is on a phone.
+4. **A real force-quit relaunch** (005) — the web build persists through AsyncStorage's
+   localStorage shim; the native path is the same API but unexercised.
+5. **The reset confirm** (005) — `Alert.alert` is a no-op on react-native-web, so the dialog
+   has never actually been shown.
