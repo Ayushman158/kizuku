@@ -35,7 +35,7 @@ import { ThinkingOrb } from "./ThinkingOrb";
 import { Watering } from "./Watering";
 import { HoldButton } from "./HoldButton";
 import { GrowthSequence, preloadGrowthFrames } from "./GrowthSequence";
-import Svg, { Circle, Path } from "react-native-svg";
+import Svg, { Circle, G, Path } from "react-native-svg";
 import KizukuMark from "../assets/kizuku-mark.svg";
 import MeditatingFigure from "../assets/kizuku-meditating.svg";
 import WateringCan from "../assets/kizuku-watering-can.svg";
@@ -999,6 +999,79 @@ function prettyDate(iso: string) {
   return year === new Date().getFullYear() ? label : `${label} ${year}`;
 }
 
+/**
+ * The field: one mark per action, accumulating.
+ *
+ * From the Memory Garden pins — every entry becomes a small drawn thing, and a
+ * year of them fills the screen. The bar chart this replaces measured the same
+ * data and made it look like analytics; the point of Kizuku is that the record
+ * is a garden, not a dashboard.
+ *
+ * Each mark is a sprout whose size and lean come from the entry itself, so no
+ * two are identical and the field is genuinely yours. A day you wrote something
+ * carries a seed head; a day you skipped is still a sprout, because a thin ring
+ * is still a ring.
+ */
+function GardenField({ entries, personality }: { entries: Entry[]; personality: PersonalityType }) {
+  const theme = themes[personality];
+  const { width } = useWindowDimensions();
+  const cols = 7;
+  const cell = Math.floor((Math.min(width, 430) - space.gutter * 2 - space.md * 2) / cols);
+
+  if (entries.length === 0) return null;
+
+  return (
+    <View style={styles.insightCard}>
+      <Eyebrow>your field</Eyebrow>
+      <View style={styles.field}>
+        {entries.map((entry, index) => {
+          // deterministic per entry, so a mark never changes once it is planted
+          const seed = [...(entry.date + entry.tag)].reduce((sum, ch) => sum + ch.charCodeAt(0), index);
+          const lean = ((seed % 9) - 4) * 1.6;
+          const height = cell * (0.58 + ((seed >> 3) % 5) * 0.07);
+          const wrote = entry.text.length > 0;
+          return (
+            <View key={`${entry.date}-${index}`} style={{ width: cell, height: cell, alignItems: "center", justifyContent: "flex-end" }}>
+              <Svg width={cell} height={cell} viewBox={`0 0 ${cell} ${cell}`}>
+                <G transform={`rotate(${lean} ${cell / 2} ${cell})`}>
+                  <Path
+                    d={`M${cell / 2} ${cell - 3} L${cell / 2} ${cell - height}`}
+                    stroke={theme.edge}
+                    strokeWidth={1.6}
+                    strokeLinecap="round"
+                  />
+                  <Path
+                    d={`M${cell / 2} ${cell - height * 0.5} C${cell / 2 - 9} ${cell - height * 0.66} ${cell / 2 - 8} ${cell - height * 0.88} ${cell / 2} ${cell - height * 0.98}`}
+                    stroke={theme.edge}
+                    strokeWidth={1.4}
+                    fill="none"
+                    strokeLinecap="round"
+                  />
+                  {/* a second leaf on most of them, so the field is not a row of matchsticks */}
+                  {seed % 3 !== 0 ? (
+                    <Path
+                      d={`M${cell / 2} ${cell - height * 0.34} C${cell / 2 + 8} ${cell - height * 0.46} ${cell / 2 + 8} ${cell - height * 0.64} ${cell / 2} ${cell - height * 0.72}`}
+                      stroke={theme.edge}
+                      strokeWidth={1.3}
+                      fill="none"
+                      strokeLinecap="round"
+                    />
+                  ) : null}
+                  {wrote ? <Circle cx={cell / 2} cy={cell - height - 2} r={2.6} fill={theme.edge} /> : null}
+                </G>
+              </Svg>
+            </View>
+          );
+        })}
+      </View>
+      <Text style={styles.cardMeta}>
+        one sprout for every action you finished. the ones with a seed head are the days you wrote
+        something too.
+      </Text>
+    </View>
+  );
+}
+
 function PatternsScreen({
   personality,
   actionsDone,
@@ -1046,17 +1119,17 @@ function PatternsScreen({
               <Text style={styles.cardMeta}>no calendar, no streak. this number only ever goes up.</Text>
             </View>
 
+            <GardenField entries={entries} personality={personality} />
+
             {ranked.length > 0 ? (
               <View style={styles.insightCard}>
                 <Eyebrow>what has helped you</Eyebrow>
-                <View style={styles.rankList}>
+                <View style={styles.tagRow}>
                   {ranked.map(([tag, count]) => (
-                    <View key={tag} style={styles.rankRow}>
-                      <Text style={styles.rankTag}>{tag}</Text>
-                      <View style={styles.rankTrack}>
-                        <View style={[styles.rankFill, { width: `${(count / most) * 100}%` }]} />
-                      </View>
-                      <Text style={styles.rankCount}>{count}</Text>
+                    <View key={tag} style={styles.tag}>
+                      <Text style={styles.tagText}>
+                        {tag} {count > 1 ? `· ${count}` : ""}
+                      </Text>
                     </View>
                   ))}
                 </View>
@@ -1900,6 +1973,7 @@ const styles = StyleSheet.create({
   rankTrack: { flex: 1, height: 6, borderRadius: 3, backgroundColor: color.paper[200], overflow: "hidden" },
   rankFill: { height: 6, borderRadius: 3, backgroundColor: color.forest[300] },
   rankCount: { ...text.caption, color: color.stone[500], width: 16, textAlign: "right" },
+  field: { flexDirection: "row", flexWrap: "wrap", marginTop: space.xs, marginBottom: space.xs },
   journal: { marginBottom: space.lg },
   journalHead: { flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", marginBottom: space.xs },
   journalCount: { ...text.caption, color: color.stone[500] },
