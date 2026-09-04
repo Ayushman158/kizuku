@@ -552,7 +552,7 @@ function WorryScreen({
           <Text style={styles.flowTitle}>what future worry is on your mind right now?</Text>
         </View>
 
-        <Slip note="be specific. the more honest you are, the better your action will be.">
+        <Slip note="be specific. the more honest you are, the better your action will be." personality={personality}>
           <TextInput
             accessibilityLabel="Future worry"
             autoFocus
@@ -766,7 +766,7 @@ function ReflectionScreen({
         >
           <Eyebrow>you came back</Eyebrow>
           <Text style={styles.flowTitle}>what happened when you did it?</Text>
-          <Slip note="your plant grows after you answer this.">
+          <Slip note="your plant grows after you answer this." personality={personality}>
             <TextInput
               accessibilityLabel="Reflection"
               multiline
@@ -1300,7 +1300,17 @@ function RevealScreen({
  * one fold above the footer. clip-path does not exist in React Native, so the
  * tear is an SVG filled with the paper colour and stretched to the card width.
  */
-function Slip({ children, note }: { children: React.ReactNode; note: string }) {
+function Slip({
+  children,
+  note,
+  personality
+}: {
+  children: React.ReactNode;
+  note: string;
+  personality: PersonalityType;
+}) {
+  const [listening, setListening] = useState(false);
+
   return (
     <View style={styles.slip}>
       <Svg width="100%" height={13} viewBox="0 0 300 13" preserveAspectRatio="none">
@@ -1314,12 +1324,15 @@ function Slip({ children, note }: { children: React.ReactNode; note: string }) {
           ))}
         </View>
 
-        <View style={styles.inputRow}>
-          {children}
-          <View style={styles.micButton}>
-            <Icon name="mic" size={17} color={color.stone[700]} />
+        {listening ? (
+          /* the orb takes the page while it listens — you are not reading, you
+             are talking, so the ruled lines have nothing to hold yet */
+          <View style={styles.slipListening}>
+            <ThinkingOrb personality={personality} size={92} />
           </View>
-        </View>
+        ) : (
+          children
+        )}
       </View>
 
       {/* the fold: a crease, not a border — shadow above, catchlight below */}
@@ -1327,7 +1340,31 @@ function Slip({ children, note }: { children: React.ReactNode; note: string }) {
       <View style={styles.foldLight} />
 
       <View style={styles.slipFooter}>
-        <Text style={styles.inputNoteText}>{note}</Text>
+        <Text style={styles.inputNoteText}>{listening ? "listening… tap to stop." : note}</Text>
+        {/*
+          The mic used to sit inside the writing area, a 44pt circle on top of
+          the ruled lines with the first line of text running into it. It is a
+          control, not part of the page, so it lives below the fold now and the
+          rules run unbroken.
+        */}
+        <Pressable
+          accessibilityLabel={listening ? "Stop listening" : "Dictate instead"}
+          accessibilityRole="button"
+          accessibilityState={{ selected: listening }}
+          hitSlop={8}
+          onPress={() => setListening((on) => !on)}
+          style={({ pressed }) => [
+            styles.micButton,
+            listening && styles.micButtonActive,
+            pressed && styles.pressed
+          ]}
+        >
+          <Icon
+            name={listening ? "circle" : "mic"}
+            size={17}
+            color={listening ? "#FFFFFF" : color.stone[700]}
+          />
+        </Pressable>
       </View>
     </View>
   );
@@ -1613,14 +1650,18 @@ const styles = StyleSheet.create({
   foldShadow: { height: 1, backgroundColor: "rgba(94,85,72,0.20)" },
   foldLight: { height: 6, backgroundColor: "rgba(255,255,255,0.65)" },
   slipFooter: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: space.sm,
     backgroundColor: color.paper.card,
     paddingHorizontal: space.gutter,
     paddingTop: space.xs,
-    paddingBottom: space.md,
+    paddingBottom: space.sm,
     borderBottomLeftRadius: radius.card,
     borderBottomRightRadius: radius.card
   },
-  inputRow: { flexDirection: "row", alignItems: "flex-start", gap: space.xs, flex: 1 },
+  slipListening: { minHeight: 102, alignItems: "center", justifyContent: "center" },
   /* lineHeight is the rule pitch, not the type's own 23 — on ruled paper the
      writing sits on the line, so the two have to be the same number */
   input: {
@@ -1635,6 +1676,7 @@ const styles = StyleSheet.create({
       default: {}
     })
   },
+  micButtonActive: { backgroundColor: color.forest[500] },
   micButton: {
     width: target.min,
     height: target.min,
@@ -1643,7 +1685,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center"
   },
-  inputNoteText: { ...text.caption, color: color.stone[500] },
+  inputNoteText: { ...text.caption, color: color.stone[500], flex: 1 },
   privateLine: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 5, marginTop: space.md },
   privateText: { fontFamily: font.sansSemibold, fontSize: 11, lineHeight: 15, letterSpacing: 0.4, color: color.forest[500] },
   /** the reveal scrolls, so its action stays a persistent footer */
