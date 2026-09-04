@@ -597,6 +597,7 @@ function CommittingScreen({ personality, onDone }: { personality: PersonalityTyp
   const reduceMotion = useReduceMotionPreference();
   const progress = useRef(new Animated.Value(0)).current;
   const figurePulse = useRef(new Animated.Value(0)).current;
+  const [trackWidth, setTrackWidth] = useState(0);
 
   useEffect(() => {
     const duration = reduceMotion ? 350 : 1900;
@@ -604,7 +605,7 @@ function CommittingScreen({ personality, onDone }: { personality: PersonalityTyp
       toValue: 1,
       duration,
       easing: Easing.inOut(Easing.cubic),
-      useNativeDriver: false
+      useNativeDriver: true
     });
     const pulseAnimation = Animated.loop(
       Animated.sequence([
@@ -621,7 +622,12 @@ function CommittingScreen({ personality, onDone }: { personality: PersonalityTyp
     };
   }, [figurePulse, onDone, progress, reduceMotion]);
 
-  const progressWidth = progress.interpolate({ inputRange: [0, 1], outputRange: ["0%", "100%"] });
+  // width cannot be native-driven, so a full-width fill is translated instead — the
+  // same move as HoldButton's progress line. This runs while GrowthScreen preloads
+  // 26 frames, which is exactly when the JS thread has nothing to spare.
+  const fillTransform = trackWidth
+    ? [{ translateX: progress.interpolate({ inputRange: [0, 1], outputRange: [-trackWidth, 0] }) }]
+    : [{ translateX: -9999 }];
   const figureScale = figurePulse.interpolate({ inputRange: [0, 1], outputRange: [1, 1.025] });
 
   return (
@@ -630,8 +636,11 @@ function CommittingScreen({ personality, onDone }: { personality: PersonalityTyp
         <Eyebrow>tending</Eyebrow>
         <Text style={styles.commitTitle}>a small thing,{"\n"}done with attention.</Text>
       </View>
-      <View style={styles.progressTrack}>
-        <Animated.View style={[styles.progressFill, { width: progressWidth }]} />
+      <View
+        style={styles.progressTrack}
+        onLayout={(event) => setTrackWidth(event.nativeEvent.layout.width)}
+      >
+        <Animated.View style={[styles.progressFill, { width: "100%", transform: fillTransform }]} />
       </View>
       <Animated.View style={[styles.commitFigure, { transform: [{ scale: figureScale }] }]}>
         <MeditatingFigure width="100%" height="100%" />
@@ -1100,32 +1109,97 @@ function RevealScreen({
 }) {
   const type = personalityTypes[personality];
   const theme = themes[personality];
+  const reduceMotion = useReduceMotionPreference();
+  const reveal = useRef(new Animated.Value(0)).current;
+
+  /*
+   * Seen exactly once per user, so it can afford ceremony the rest of the app
+   * cannot. One driver, five slices — each element opens over its own stretch of
+   * the same 0..1 timeline, in the order the screen is read. No spring and no
+   * bounce: this is text settling, not the plant rising.
+   */
+  useEffect(() => {
+    reveal.setValue(reduceMotion ? 1 : 0);
+    if (reduceMotion) return;
+
+    Animated.timing(reveal, {
+      toValue: 1,
+      duration: 1100,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: true
+    }).start();
+  }, [reveal, reduceMotion]);
+
+  const step = (from: number, to: number) => ({
+    opacity: reveal.interpolate({ inputRange: [from, to], outputRange: [0, 1], extrapolate: "clamp" as const }),
+    transform: [
+      {
+        translateY: reveal.interpolate({
+          inputRange: [from, to],
+          outputRange: [14, 0],
+          extrapolate: "clamp" as const
+        })
+      }
+    ]
+  });
+
+  const emblem = step(0, 0.34);
+  // 0.92, never 0 — nothing in the real world appears from nothing
+  const emblemScale = reveal.interpolate({
+    inputRange: [0, 0.34],
+    outputRange: [0.92, 1],
+    extrapolate: "clamp"
+  });
 
   return (
     <View style={[styles.flex, { backgroundColor: theme.surface }]}>
       <ScrollView contentContainerStyle={styles.revealContent} showsVerticalScrollIndicator={false}>
-        <View style={styles.revealEmblem}>
-          <TypeEmblem personality={personality} ink={theme.ink} edge={theme.edge} />
-        </View>
+        {/*
+          The real plant, not an abstract mark. Every type already has its own
+          artwork in assets/ and the garden uses it — the reveal was the one
+          screen drawing a 2px squiggle instead of showing you the thing you
+          are about to grow.
+        */}
+        <Animated.View
+          style={[
+            styles.revealEmblem,
+            { opacity: emblem.opacity, transform: [...emblem.transform, { scale: emblemScale }] }
+          ]}
+        >
+          <Image
+            accessibilityIgnoresInvertColors
+            resizeMode="contain"
+            source={plantFor(personality, "grown")}
+            style={styles.revealPlant}
+          />
+        </Animated.View>
 
-        <Text style={[styles.eyebrow, { color: theme.ink }]}>your type</Text>
-        <Text style={[styles.revealName, { color: theme.ink }]}>{type.name}</Text>
-        <Text style={[styles.revealQuote, { color: theme.ink }]}>“{type.quote}”</Text>
+        {/* the label and the name are one unit and must not separate */}
+        <Animated.View style={step(0.16, 0.52)}>
+          <Text style={[styles.eyebrow, { color: theme.ink }]}>your type</Text>
+          <Text style={[styles.revealName, { color: theme.ink }]}>{type.name}</Text>
+        </Animated.View>
 
-        <View style={[styles.revealCard, { backgroundColor: theme.raised }]}>
+        <Animated.View style={step(0.3, 0.66)}>
+          <Text style={[styles.revealQuote, { color: theme.ink }]}>“{type.quote}”</Text>
+        </Animated.View>
+
+        <Animated.View style={[styles.revealCard, step(0.44, 0.8)]}>
           <Text style={[styles.eyebrow, { color: theme.ink }]}>your pattern</Text>
           <Text style={[styles.revealPattern, { color: theme.ink }]}>{type.pattern}</Text>
-        </View>
+        </Animated.View>
 
-        <View style={styles.revealTags}>
+        {/* the container, not each tag — staggering nine chips would over-egg it */}
+        <Animated.View style={[styles.revealTags, step(0.56, 0.92)]}>
           {type.traits.map((trait) => (
-            <View key={trait} style={[styles.tag, { backgroundColor: theme.raised }]}>
-              <Text style={[styles.tagText, { color: theme.ink }]}>{trait}</Text>
+            <View key={trait} style={[styles.tag, styles.revealTag]}>
+              <Text style={styles.tagText}>{trait}</Text>
             </View>
           ))}
-        </View>
+        </Animated.View>
       </ScrollView>
 
+      {/* deliberately unanimated: ceremony must never gate the way out */}
       <View style={styles.bottomAction}>
         <PrimaryButton label="meet your plant" onPress={onDone} />
       </View>
@@ -1133,6 +1207,16 @@ function RevealScreen({
   );
 }
 
+/**
+ * The wrapper for the three screens that ask something of you — worry, action,
+ * reflection. They used to hard-cut in while the garden either side of them
+ * faded and rose, so the ritual snapped exactly where it was asking for
+ * attention. Same token, same curve, same 24px as HomeScreen's prompt.
+ *
+ * The gradient stays outside the animated view: it paints immediately and only
+ * the content rises over it. Animating the gradient would be a paint animation
+ * and could not use the native driver.
+ */
 function GradientScreen({
   personality,
   children
@@ -1140,9 +1224,28 @@ function GradientScreen({
   personality: PersonalityType;
   children: React.ReactNode;
 }) {
+  const reduceMotion = useReduceMotionPreference();
+  const entrance = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    entrance.setValue(reduceMotion ? 1 : 0);
+    if (reduceMotion) return;
+
+    Animated.timing(entrance, {
+      toValue: 1,
+      duration: motion.enterSoft,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: true
+    }).start();
+  }, [entrance, reduceMotion]);
+
+  const rise = entrance.interpolate({ inputRange: [0, 1], outputRange: [24, 0] });
+
   return (
     <LinearGradient colors={themes[personality].ritual} style={styles.flex}>
-      {children}
+      <Animated.View style={[styles.flex, { opacity: entrance, transform: [{ translateY: rise }] }]}>
+        {children}
+      </Animated.View>
     </LinearGradient>
   );
 }
@@ -1346,10 +1449,26 @@ const styles = StyleSheet.create({
 
   // type reveal
   revealContent: { paddingHorizontal: space.lg, paddingTop: space.xxl, paddingBottom: 108 },
-  revealEmblem: { width: 130, height: 130, alignSelf: "center", marginBottom: space.xl },
+  revealEmblem: { width: 168, height: 208, alignSelf: "center", marginBottom: space.xl },
+  revealPlant: { width: "100%", height: "100%" },
   revealName: { ...text.displayLg, marginTop: space.xs },
   revealQuote: { fontFamily: font.serifItalic, fontSize: 17, lineHeight: 26, marginTop: space.sm },
-  revealCard: { borderRadius: radius.card, padding: space.gutter, marginTop: space.lg },
+  /*
+   * Paper, not a tint of the surface. theme.raised against theme.surface measures
+   * 1.12:1 on optimizer, 1.21 on seeker, 1.25 on planner — three near-invisible
+   * cards. Paper lifts it to 1.42/1.74/1.89, and elevation.lifted does the rest,
+   * which is exactly what actionCard already does on the same coloured grounds.
+   */
+  revealCard: {
+    borderRadius: radius.card,
+    padding: space.gutter,
+    marginTop: space.lg,
+    backgroundColor: color.paper.card,
+    ...elevation.lifted
+  },
+  /* chips get a hairline instead of a shadow — on optimizer's yellow, fill alone
+     only reaches 1.27:1, so the edge is what makes them read as objects */
+  revealTag: { backgroundColor: color.paper.card, ...elevation.flat },
   revealPattern: { ...text.bodyLg, fontSize: 16, lineHeight: 26, marginTop: space.sm },
   revealTags: { flexDirection: "row", flexWrap: "wrap", gap: space.xs, marginTop: space.md },
 
