@@ -1,6 +1,11 @@
 # 001 — Replace hold-to-commit with a swipe that parts the perforation
 
-- **Status**: TODO — *prototyped in the design canvas; not yet ported to the app*
+- **Status**: PARKED (2026-09-04) — the interaction is built and tuned in the design canvas
+  and stays there. It specifies a tear along a seed packet's perforation, but the app's
+  commit control is a green pill with a progress line: there is no packet. Porting it would
+  first require restyling `actionCard` as a packet and moving the commit into its seam,
+  which this plan does not scope. **Do not execute steps 7–10 as written.** Revisit only if
+  the packet is adopted into the app.
 - **Supersedes**: the hold-driven version of this plan (the gesture changed from hold to swipe on 2026-09-04)
 - **Commit**: 34c481c
 - **Severity**: MEDIUM
