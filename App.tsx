@@ -11,7 +11,8 @@ export default function App() {
     Newsreader_400Regular: require("./assets/fonts/Newsreader_400Regular.ttf"),
     "Satoshi-Regular": require("./assets/fonts/Satoshi-Regular.ttf"),
     "Satoshi-Medium": require("./assets/fonts/Satoshi-Medium.ttf"),
-    "Satoshi-SemiBold": require("./assets/fonts/Satoshi-SemiBold.ttf")
+    "Satoshi-SemiBold": require("./assets/fonts/Satoshi-SemiBold.ttf"),
+    "Caveat-Medium": require("./assets/fonts/Caveat-Medium.ttf")
   });
 
   if (!fontsLoaded) {

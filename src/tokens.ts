@@ -88,7 +88,9 @@ export const font = {
   /** Satoshi is the brand face, instanced from the licensed variable file */
   sans: "Satoshi-Regular",
   sansMedium: "Satoshi-Medium",
-  sansSemibold: "Satoshi-SemiBold"
+  sansSemibold: "Satoshi-SemiBold",
+  /** the user's own hand — journal entries only, never interface text */
+  hand: "Caveat-Medium"
 } as const;
 
 /** Nine steps, each with one job. 11 is the floor. */
@@ -101,6 +103,10 @@ export const text = {
   body: { fontFamily: font.sans, fontSize: 15, lineHeight: 23 },
   label: { fontFamily: font.sansSemibold, fontSize: 13, lineHeight: 18 },
   caption: { fontFamily: font.sans, fontSize: 12, lineHeight: 17 },
+  /* Caveat runs small for its point size, so 21 here sits at about the same
+     optical size as 17pt bodyLg. Line height is generous: handwriting needs
+     more room than type does. */
+  journal: { fontFamily: font.hand, fontSize: 21, lineHeight: 32 },
   eyebrow: {
     fontFamily: font.sansSemibold,
     fontSize: 11,

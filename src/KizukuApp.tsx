@@ -27,7 +27,7 @@ import {
   type GrowthStage,
   type PersonalityType
 } from "./productModel";
-import { clearState, loadState, saveState, todayKey } from "./storage";
+import { clearState, loadState, saveState, todayKey, type Entry } from "./storage";
 import { themes } from "./tokens";
 import { color, elevation, font, motion, radius, space, target, text } from "./tokens";
 import { Icon, type IconName } from "./Icon";
@@ -116,7 +116,7 @@ export function KizukuApp() {
    */
   const [lastCompletedOn, setLastCompletedOn] = useState<string | null>(null);
   const [actionIndex, setActionIndex] = useState(0);
-  const [history, setHistory] = useState<string[]>([]);
+  const [entries, setEntries] = useState<Entry[]>([]);
   const [hydrated, setHydrated] = useState(false);
   const [onboarded, setOnboarded] = useState(false);
 
@@ -143,7 +143,7 @@ export function KizukuApp() {
       if (saved) {
         setPersonality(saved.personality);
         setActionsDone(saved.actionsDone);
-        setHistory(saved.history);
+        setEntries(saved.entries);
         setLastCompletedOn(saved.lastCompletedOn);
         setOnboarded(saved.onboarded);
         if (saved.onboarded) setScreen("home");
@@ -167,14 +167,14 @@ export function KizukuApp() {
     // saw the welcome screen again.
     if (!hydrated || devJump || !onboarded) return;
     saveState({
-      version: 1,
+      version: 2,
       personality,
       actionsDone,
-      history,
+      entries,
       lastCompletedOn,
       onboarded
     });
-  }, [hydrated, devJump, onboarded, personality, actionsDone, history, lastCompletedOn]);
+  }, [hydrated, devJump, onboarded, personality, actionsDone, entries, lastCompletedOn]);
 
   /**
    * Dev-only: jump straight to a screen. Used for capturing the real UI and
@@ -211,7 +211,8 @@ export function KizukuApp() {
 
   const completeReflection = () => {
     setActionsDone((count) => count + 1);
-    setHistory((tags) => [...tags, action.tag]);
+    // the page the journal will show: what you did, and what you said about it
+    setEntries((pages) => [...pages, { date: todayKey(), tag: action.tag, text: reflection.trim() }]);
     setLastCompletedOn(todayKey());
     setScreen("growth");
   };
@@ -293,6 +294,7 @@ export function KizukuApp() {
               onChange={setReflection}
               onBack={() => setScreen("action")}
               onSkip={() => {
+                setEntries((pages) => [...pages, { date: todayKey(), tag: action.tag, text: "" }]);
                 setLastCompletedOn(todayKey());
                 setScreen("home");
               }}
@@ -309,7 +311,7 @@ export function KizukuApp() {
             <PatternsScreen
               personality={personality}
               actionsDone={actionsDone}
-              history={history}
+              entries={entries}
               onTab={openTab}
             />
           ) : null}
@@ -340,7 +342,7 @@ export function KizukuApp() {
                         setWorry("");
                         setReflection("");
                         setActionsDone(0);
-                        setHistory([]);
+                        setEntries([]);
                         setLastCompletedOn(null);
                         setScreen("home");
                       }
@@ -565,11 +567,6 @@ function WorryScreen({
             value={value}
           />
         </Slip>
-
-        <View style={styles.privateLine}>
-          <Icon name="lock" size={12} color={color.forest[500]} />
-          <Text style={styles.privateText}>private · stays on this device</Text>
-        </View>
 
         <View style={styles.inlineAction}>
           <PrimaryButton label="get my action" disabled={value.trim().length < 4} onPress={onContinue} />
@@ -909,20 +906,113 @@ function GrowthScreen({
   );
 }
 
+/** how much of the next page stays visible, and the gutter between them */
+const PEEK = 26;
+const PAGE_GAP = 10;
+
+/**
+ * The journal: the reflections you have written, one dated page at a time.
+ *
+ * Paged rather than listed. A list turns your own words into rows of data to
+ * scan; a page is one day, and you have to turn it to reach the next — which is
+ * how you actually reread a diary. The page is the same paper as the slip you
+ * wrote it on, and the text is set in the hand rather than the interface face,
+ * because it is yours and not ours.
+ *
+ * Newest first: coming back, you want yesterday, not your first day.
+ */
+function Journal({ entries }: { entries: Entry[] }) {
+  const { width } = useWindowDimensions();
+  const pages = useMemo(() => [...entries].reverse(), [entries]);
+  const [page, setPage] = useState(0);
+  // leave PEEK visible of the page after this one
+  const pageWidth = Math.min(width, 430) - space.gutter * 2 - PEEK;
+
+  if (pages.length === 0) return null;
+
+  const current = pages[Math.min(page, pages.length - 1)]!;
+
+  return (
+    <View style={styles.journal}>
+      <View style={styles.journalHead}>
+        <Eyebrow>your journal</Eyebrow>
+        <Text style={styles.journalCount}>
+          {page + 1} / {pages.length}
+        </Text>
+      </View>
+
+      {/*
+        The next page shows a sliver at the right rather than a fake stack drawn
+        behind. Real depth, and it says "there is another one" without a hint.
+        snapToInterval rather than pagingEnabled, because the page is narrower
+        than the scroller.
+      */}
+      <ScrollView
+        horizontal
+        decelerationRate="fast"
+        snapToInterval={pageWidth + PAGE_GAP}
+        snapToAlignment="start"
+        showsHorizontalScrollIndicator={false}
+        onMomentumScrollEnd={(event) =>
+          setPage(Math.round(event.nativeEvent.contentOffset.x / (pageWidth + PAGE_GAP)))
+        }
+        style={styles.journalPages}
+      >
+        {pages.map((entry, index) => (
+          <View
+            key={`${entry.date}-${index}`}
+            style={[
+              styles.journalPage,
+              { width: pageWidth, marginRight: index === pages.length - 1 ? 0 : PAGE_GAP }
+            ]}
+          >
+            <View style={styles.journalDateRow}>
+              <Text style={styles.journalDate}>{prettyDate(entry.date)}</Text>
+              <View style={styles.tag}>
+                <Text style={styles.tagText}>{entry.tag}</Text>
+              </View>
+            </View>
+
+            {entry.text ? (
+              <Text style={styles.journalText}>{entry.text}</Text>
+            ) : (
+              <Text style={styles.journalBlank}>you skipped this one. that is allowed.</Text>
+            )}
+          </View>
+        ))}
+      </ScrollView>
+
+      <Text style={styles.journalHint}>
+        {pages.length > 1 ? "swipe to turn the page" : "one page so far"}
+      </Text>
+    </View>
+  );
+}
+
+/** "4 September" — no year unless it is not this one. */
+function prettyDate(iso: string) {
+  if (!iso) return "an earlier day";
+  const [year, month, day] = iso.split("-").map(Number);
+  if (!year || !month || !day) return "an earlier day";
+  const date = new Date(year, month - 1, day);
+  const label = date.toLocaleDateString(undefined, { day: "numeric", month: "long" });
+  return year === new Date().getFullYear() ? label : `${label} ${year}`;
+}
+
 function PatternsScreen({
   personality,
   actionsDone,
-  history,
+  entries,
   onTab
 }: {
   personality: PersonalityType;
   actionsDone: number;
-  history: string[];
+  entries: Entry[];
   onTab: (tab: MainTab) => void;
 }) {
   const type = personalityTypes[personality];
   const counts = new Map<string, number>();
-  history.forEach((tag) => counts.set(tag, (counts.get(tag) ?? 0) + 1));
+  entries.forEach(({ tag }) => counts.set(tag, (counts.get(tag) ?? 0) + 1));
   const ranked = [...counts.entries()].sort((a, b) => b[1] - a[1]);
   const most = ranked.length > 0 ? Math.max(...ranked.map(([, count]) => count)) : 1;
 
@@ -947,6 +1037,8 @@ function PatternsScreen({
               you turn worry into plans.{"\n"}
               <Text style={styles.patternAccent}>step by step.</Text>
             </Text>
+
+            <Journal entries={entries} />
 
             <View style={styles.insightCard}>
               <Eyebrow>moments of showing up</Eyebrow>
@@ -1770,6 +1862,24 @@ const styles = StyleSheet.create({
   rankTrack: { flex: 1, height: 6, borderRadius: 3, backgroundColor: color.paper[200], overflow: "hidden" },
   rankFill: { height: 6, borderRadius: 3, backgroundColor: color.forest[300] },
   rankCount: { ...text.caption, color: color.stone[500], width: 16, textAlign: "right" },
+  journal: { marginBottom: space.lg },
+  journalHead: { flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", marginBottom: space.xs },
+  journalCount: { ...text.caption, color: color.stone[500] },
+  /* two slivers peeking out, so it reads as a stack you are partway into */
+  journalPages: { marginTop: space.xxs, overflow: "visible" },
+  journalPage: {
+    backgroundColor: color.paper.card,
+    borderRadius: radius.group,
+    padding: space.md,
+    minHeight: 168,
+    ...elevation.raised
+  },
+  journalDateRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.sm, marginBottom: space.xs },
+  journalDate: { ...text.label, color: color.stone[500] },
+  /* the user's hand, not the interface face */
+  journalText: { ...text.journal, color: color.stone[900] },
+  journalBlank: { ...text.body, color: color.stone[400], fontStyle: "italic" },
+  journalHint: { ...text.caption, color: color.stone[400], textAlign: "center", marginTop: space.xs },
   insightCard: {
     backgroundColor: color.paper.card,
     borderRadius: radius.group,
