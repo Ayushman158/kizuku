@@ -20,6 +20,8 @@ import {
 import { LinearGradient } from "expo-linear-gradient";
 import {
   actionTemplates,
+  chooseAction,
+  nextAction,
   personalityTypes,
   quiz,
   stageFor,
@@ -70,24 +72,39 @@ const TORN_EDGE =
   "L147 4.5 L165 1.5 L184 6.5 L202 1 L221 5 L239 1.5 L258 6 L276 1.5 " +
   "L300 4 L300 13 Z";
 
-/** Every type's own plant, both states, straight from the hi-fi file. */
+/**
+ * Every type's tree at each of its six stages, straight from the design file.
+ * Indexed by stage - 1, so plantFor() is the only place that arithmetic lives.
+ */
 const plants = {
-  optimizer: {
-    seed: require("../assets/optimiser-seed.png"),
-    grown: require("../assets/optimiser-tree.png")
-  },
-  seeker: {
-    seed: require("../assets/seeker-seed.png"),
-    grown: require("../assets/seeker-tree.png")
-  },
-  planner: {
-    seed: require("../assets/planner-seed.png"),
-    grown: require("../assets/planner-tree.png")
-  }
+  optimizer: [
+    require("../assets/stages/optimiser-1.png"),
+    require("../assets/stages/optimiser-2.png"),
+    require("../assets/stages/optimiser-3.png"),
+    require("../assets/stages/optimiser-4.png"),
+    require("../assets/stages/optimiser-5.png"),
+    require("../assets/stages/optimiser-6.png")
+  ],
+  seeker: [
+    require("../assets/stages/seeker-1.png"),
+    require("../assets/stages/seeker-2.png"),
+    require("../assets/stages/seeker-3.png"),
+    require("../assets/stages/seeker-4.png"),
+    require("../assets/stages/seeker-5.png"),
+    require("../assets/stages/seeker-6.png")
+  ],
+  planner: [
+    require("../assets/stages/planner-1.png"),
+    require("../assets/stages/planner-2.png"),
+    require("../assets/stages/planner-3.png"),
+    require("../assets/stages/planner-4.png"),
+    require("../assets/stages/planner-5.png"),
+    require("../assets/stages/planner-6.png")
+  ]
 } as const;
 
 function plantFor(personality: PersonalityType, stage: GrowthStage) {
-  return plants[personality][stage];
+  return plants[personality][stage - 1]!;
 }
 
 function useReduceMotionPreference() {
@@ -126,9 +143,14 @@ export function KizukuApp() {
 
   const action = actionTemplates[actionIndex % actionTemplates.length]!;
 
-  const chooseAction = () => {
-    const score = [...worry].reduce((sum, letter) => sum + letter.charCodeAt(0), 0);
-    setActionIndex(Math.abs(score) % actionTemplates.length);
+  /*
+   * Who you are, and what you have already been given. The worry chooses
+   * nothing — it is never stored, and running its character codes through a
+   * modulo was theatre that the thinking screen dressed up as deliberation.
+   * Personality was not even an input, so the quiz changed only colours.
+   */
+  const pickAction = () => {
+    setActionIndex(chooseAction(personality, entries.map((entry) => entry.tag)));
     setScreen("thinking");
   };
 
@@ -140,22 +162,23 @@ export function KizukuApp() {
   /*
    * Read once on launch. A returning user goes straight to the garden.
    *
-   * The dev jump sets the screen synchronously on mount; this resolves after it,
-   * so without the guard below a saved install would always yank you back to the
-   * garden and ?s=worry would look broken.
+   * The dev jump sets state synchronously on mount; this resolves after it, so a
+   * saved install would otherwise win every field it touches — ?p=planner&n=0
+   * would render whatever type and stage happen to be on the device. When a jump
+   * is driving, the save is read only far enough to mark hydration done.
    */
   useEffect(() => {
     let cancelled = false;
     loadState().then((saved) => {
       if (cancelled) return;
-      if (saved) {
+      if (saved && !devJump) {
         setPersonality(saved.personality);
         setActionsDone(saved.actionsDone);
         setEntries(saved.entries);
         setLastCompletedOn(saved.lastCompletedOn);
         setOnboarded(saved.onboarded);
         setPlantName(saved.plantName ?? "");
-        if (saved.onboarded && !devJump) setScreen("home");
+        if (saved.onboarded) setScreen("home");
       }
       setHydrated(true);
     });
@@ -286,7 +309,7 @@ export function KizukuApp() {
               value={worry}
               onChange={setWorry}
               onBack={() => setScreen("home")}
-              onContinue={chooseAction}
+              onContinue={pickAction}
               onTab={openTab}
             />
           ) : null}
@@ -299,7 +322,7 @@ export function KizukuApp() {
               action={action}
               onBack={() => setScreen("home")}
               onCommit={() => setScreen("committing")}
-              onSwap={() => setActionIndex((index) => (index + 1) % actionTemplates.length)}
+              onSwap={() => setActionIndex((index) => nextAction(personality, index))}
               onTab={openTab}
             />
           ) : null}
@@ -476,7 +499,7 @@ function HomeScreen({
 
   // where the plant sits relative to the can, so a flick can be aimed at it
   const canvasWidth = Math.min(width, 430);
-  const frame = heroFrames[personality][stage];
+  const frame = heroFrames[personality][stage - 1]!;
   const reach = {
     dx: (frame.left ?? 0) + frame.width / 2 - (canvasWidth - 154 / 2),
     dy: frame.top + frame.height / 2 - (420 + 162 / 2)
@@ -1182,8 +1205,8 @@ function PatternsScreen({
         ) : (
           <>
             <Text style={styles.patternTitle}>
-              you turn worry into plans.{"\n"}
-              <Text style={styles.patternAccent}>step by step.</Text>
+              {type.headline.lead}{"\n"}
+              <Text style={styles.patternAccent}>{type.headline.accent}</Text>
             </Text>
 
             <Journal entries={entries} />
@@ -1221,7 +1244,7 @@ function PatternsScreen({
                   </View>
                 ))}
               </View>
-              <Text style={styles.quote}>“every worry is a question waiting to be heard.”</Text>
+              <Text style={styles.quote}>“{type.mantra}”</Text>
             </View>
           </>
         )}
@@ -1559,7 +1582,7 @@ function RevealScreen({
           <Image
             accessibilityIgnoresInvertColors
             resizeMode="contain"
-            source={plantFor(personality, "grown")}
+            source={plantFor(personality, 6)}
             style={styles.revealPlant}
           />
         </Animated.View>
@@ -1775,7 +1798,7 @@ function NamingScreen({
           <Image
             accessibilityIgnoresInvertColors
             resizeMode="contain"
-            source={plantFor(personality, "seed")}
+            source={plantFor(personality, 1)}
             style={styles.namingSeed}
           />
         </Animated.View>
@@ -1983,12 +2006,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center"
   },
-  heroOptimizerGrown: { position: "absolute", top: 205, left: -2, width: 326, height: 360, transformOrigin: "center bottom" },
-  heroOptimizerSeed: { position: "absolute", top: 402, left: 96, width: 124, height: 163, transformOrigin: "center bottom" },
-  heroSeekerGrown: { position: "absolute", top: 205, left: 11, width: 300, height: 360, transformOrigin: "center bottom" },
-  heroSeekerSeed: { position: "absolute", top: 417, left: 86, width: 150, height: 148, transformOrigin: "center bottom" },
-  heroPlannerGrown: { position: "absolute", top: 185, left: 22, width: 278, height: 380, transformOrigin: "center bottom" },
-  heroPlannerSeed: { position: "absolute", top: 465, left: 76, width: 170, height: 100, transformOrigin: "center bottom" },
   heroTreeImage: { width: "100%", height: "100%" },
   heroWateringCan: { position: "absolute", top: 420, right: 0, width: 154, height: 162, zIndex: 2 },
   homeCardMotion: { position: "absolute", left: space.gutter, right: space.gutter, bottom: 146 },
@@ -2341,12 +2358,39 @@ const styles = StyleSheet.create({
 });
 
 /** Frames sized to each plant's own proportions, all sharing the horizon at 565. */
+/*
+ * Where each stage sits on the garden canvas. Every frame shares the ground
+ * line (bottom 565) and the centre (x 161) the two hand-tuned frames already
+ * used, so a plant grows upward out of the same soil rather than jumping.
+ * Heights follow the design file's own proportions between stages.
+ */
 const heroFrames = {
-  optimizer: { seed: styles.heroOptimizerSeed, grown: styles.heroOptimizerGrown },
-  seeker: { seed: styles.heroSeekerSeed, grown: styles.heroSeekerGrown },
-  planner: { seed: styles.heroPlannerSeed, grown: styles.heroPlannerGrown }
+  optimizer: [
+    { position: "absolute", top: 463, left: 119, width: 84, height: 102, transformOrigin: "center bottom" },
+    { position: "absolute", top: 437, left: 121, width: 80, height: 128, transformOrigin: "center bottom" },
+    { position: "absolute", top: 374, left: 104, width: 115, height: 191, transformOrigin: "center bottom" },
+    { position: "absolute", top: 356, left: 73, width: 177, height: 209, transformOrigin: "center bottom" },
+    { position: "absolute", top: 325, left: 44, width: 235, height: 240, transformOrigin: "center bottom" },
+    { position: "absolute", top: 205, left: 3, width: 317, height: 360, transformOrigin: "center bottom" }
+  ],
+  seeker: [
+    { position: "absolute", top: 457, left: 103, width: 115, height: 108, transformOrigin: "center bottom" },
+    { position: "absolute", top: 387, left: 96, width: 130, height: 178, transformOrigin: "center bottom" },
+    { position: "absolute", top: 329, left: 97, width: 127, height: 236, transformOrigin: "center bottom" },
+    { position: "absolute", top: 332, left: 90, width: 142, height: 233, transformOrigin: "center bottom" },
+    { position: "absolute", top: 283, left: 42, width: 238, height: 282, transformOrigin: "center bottom" },
+    { position: "absolute", top: 205, left: 23, width: 275, height: 360, transformOrigin: "center bottom" }
+  ],
+  planner: [
+    { position: "absolute", top: 497, left: 102, width: 117, height: 68, transformOrigin: "center bottom" },
+    { position: "absolute", top: 452, left: 72, width: 177, height: 113, transformOrigin: "center bottom" },
+    { position: "absolute", top: 378, left: 52, width: 219, height: 187, transformOrigin: "center bottom" },
+    { position: "absolute", top: 265, left: 23, width: 276, height: 300, transformOrigin: "center bottom" },
+    { position: "absolute", top: 243, left: 30, width: 262, height: 322, transformOrigin: "center bottom" },
+    { position: "absolute", top: 185, left: 7, width: 307, height: 380, transformOrigin: "center bottom" }
+  ]
 } as const;
 
 function heroStageStyle(personality: PersonalityType, stage: GrowthStage) {
-  return heroFrames[personality][stage];
+  return heroFrames[personality][stage - 1]!;
 }
