@@ -73,6 +73,19 @@ const TORN_EDGE =
   "L147 4.5 L165 1.5 L184 6.5 L202 1 L221 5 L239 1.5 L258 6 L276 1.5 " +
   "L300 4 L300 13 Z";
 
+/*
+ * How far the soil line sits above the bottom of the garden. Everything in the
+ * scene is measured from it, the watering can included, so the composition
+ * keeps its footing whatever the screen height.
+ *
+ * The art used to be measured from the top (a ground line at 565) while the
+ * prompt card was measured from the bottom. In a browser the container is the
+ * whole viewport and the two cleared each other; on a device SafeAreaView takes
+ * roughly 93pt of insets out of that container, and the card climbed into the
+ * plant and the watering can.
+ */
+const GROUND_ABOVE_FLOOR = 280;
+
 /**
  * Every type's tree at each of its six stages, straight from the design file.
  * Indexed by stage - 1, so plantFor() is the only place that arithmetic lives.
@@ -519,9 +532,10 @@ function HomeScreen({
   // where the plant sits relative to the can, so a flick can be aimed at it
   const canvasWidth = Math.min(width, 430);
   const frame = heroFrames[personality][stage - 1]!;
+  // from the can's centre to the plant's, both now measured up from the floor
   const reach = {
     dx: (frame.left ?? 0) + frame.width / 2 - (canvasWidth - 154 / 2),
-    dy: frame.top + frame.height / 2 - (420 + 162 / 2)
+    dy: GROUND_ABOVE_FLOOR - 17 + 162 / 2 - (GROUND_ABOVE_FLOOR + frame.height / 2)
   };
 
   const backgroundTranslate = landscapeDrift.interpolate({ inputRange: [0, 1], outputRange: [-5, 5] });
@@ -1839,7 +1853,13 @@ function NamingScreen({
   return (
     <View style={[styles.flex, { backgroundColor: theme.surface }]}>
       <ScrollView contentContainerStyle={styles.namingContent} showsVerticalScrollIndicator={false}>
-        <Animated.View style={{ transform: [{ scale: plantScale }] }}>
+        {/*
+          alignSelf lives on the wrapper, not the image. The breathing animation
+          put an Animated.View between the image and the column, so centring the
+          image only centred it inside a wrapper its own width — and the wrapper
+          took the column's alignItems: "flex-start" and sat against the edge.
+        */}
+        <Animated.View style={[styles.namingSeedWrap, { transform: [{ scale: plantScale }] }]}>
           <Image
             accessibilityIgnoresInvertColors
             resizeMode="contain"
@@ -2052,7 +2072,8 @@ const styles = StyleSheet.create({
     justifyContent: "center"
   },
   heroTreeImage: { width: "100%", height: "100%" },
-  heroWateringCan: { position: "absolute", top: 420, right: 0, width: 154, height: 162, zIndex: 2 },
+  // the can rests slightly forward of the soil line, as it did before
+  heroWateringCan: { position: "absolute", bottom: GROUND_ABOVE_FLOOR - 17, right: 0, width: 154, height: 162, zIndex: 2 },
   homeCardMotion: { position: "absolute", left: space.gutter, right: space.gutter, bottom: 146 },
   homeCard: {
     minHeight: 104,
@@ -2126,7 +2147,8 @@ const styles = StyleSheet.create({
   // type reveal
   revealContent: { paddingHorizontal: space.lg, paddingTop: space.xxl, paddingBottom: 108 },
   namingContent: { paddingHorizontal: space.gutter, paddingTop: space.xxxl, paddingBottom: 140, alignItems: "flex-start" },
-  namingSeed: { width: 116, height: 132, alignSelf: "center", marginBottom: space.lg },
+  namingSeedWrap: { alignSelf: "center", marginBottom: space.lg },
+  namingSeed: { width: 116, height: 132 },
   namingTitle: { ...text.displayLg, marginTop: space.xxs },
   namingBody: { ...text.bodyLg, opacity: 0.78, marginTop: space.sm },
   namingField: {
@@ -2413,28 +2435,28 @@ const styles = StyleSheet.create({
  */
 const heroFrames = {
   optimizer: [
-    { position: "absolute", top: 463, left: 119, width: 84, height: 102, transformOrigin: "center bottom" },
-    { position: "absolute", top: 437, left: 121, width: 80, height: 128, transformOrigin: "center bottom" },
-    { position: "absolute", top: 374, left: 104, width: 115, height: 191, transformOrigin: "center bottom" },
-    { position: "absolute", top: 356, left: 73, width: 177, height: 209, transformOrigin: "center bottom" },
-    { position: "absolute", top: 325, left: 44, width: 235, height: 240, transformOrigin: "center bottom" },
-    { position: "absolute", top: 205, left: 3, width: 317, height: 360, transformOrigin: "center bottom" }
+    { position: "absolute", bottom: GROUND_ABOVE_FLOOR, left: 119, width: 84, height: 102, transformOrigin: "center bottom" },
+    { position: "absolute", bottom: GROUND_ABOVE_FLOOR, left: 121, width: 80, height: 128, transformOrigin: "center bottom" },
+    { position: "absolute", bottom: GROUND_ABOVE_FLOOR, left: 104, width: 115, height: 191, transformOrigin: "center bottom" },
+    { position: "absolute", bottom: GROUND_ABOVE_FLOOR, left: 73, width: 177, height: 209, transformOrigin: "center bottom" },
+    { position: "absolute", bottom: GROUND_ABOVE_FLOOR, left: 44, width: 235, height: 240, transformOrigin: "center bottom" },
+    { position: "absolute", bottom: GROUND_ABOVE_FLOOR, left: 3, width: 317, height: 360, transformOrigin: "center bottom" }
   ],
   seeker: [
-    { position: "absolute", top: 457, left: 103, width: 115, height: 108, transformOrigin: "center bottom" },
-    { position: "absolute", top: 387, left: 96, width: 130, height: 178, transformOrigin: "center bottom" },
-    { position: "absolute", top: 329, left: 97, width: 127, height: 236, transformOrigin: "center bottom" },
-    { position: "absolute", top: 332, left: 90, width: 142, height: 233, transformOrigin: "center bottom" },
-    { position: "absolute", top: 283, left: 42, width: 238, height: 282, transformOrigin: "center bottom" },
-    { position: "absolute", top: 205, left: 23, width: 275, height: 360, transformOrigin: "center bottom" }
+    { position: "absolute", bottom: GROUND_ABOVE_FLOOR, left: 103, width: 115, height: 108, transformOrigin: "center bottom" },
+    { position: "absolute", bottom: GROUND_ABOVE_FLOOR, left: 96, width: 130, height: 178, transformOrigin: "center bottom" },
+    { position: "absolute", bottom: GROUND_ABOVE_FLOOR, left: 97, width: 127, height: 236, transformOrigin: "center bottom" },
+    { position: "absolute", bottom: GROUND_ABOVE_FLOOR, left: 90, width: 142, height: 233, transformOrigin: "center bottom" },
+    { position: "absolute", bottom: GROUND_ABOVE_FLOOR, left: 42, width: 238, height: 282, transformOrigin: "center bottom" },
+    { position: "absolute", bottom: GROUND_ABOVE_FLOOR, left: 23, width: 275, height: 360, transformOrigin: "center bottom" }
   ],
   planner: [
-    { position: "absolute", top: 497, left: 102, width: 117, height: 68, transformOrigin: "center bottom" },
-    { position: "absolute", top: 452, left: 72, width: 177, height: 113, transformOrigin: "center bottom" },
-    { position: "absolute", top: 378, left: 52, width: 219, height: 187, transformOrigin: "center bottom" },
-    { position: "absolute", top: 265, left: 23, width: 276, height: 300, transformOrigin: "center bottom" },
-    { position: "absolute", top: 243, left: 30, width: 262, height: 322, transformOrigin: "center bottom" },
-    { position: "absolute", top: 185, left: 7, width: 307, height: 380, transformOrigin: "center bottom" }
+    { position: "absolute", bottom: GROUND_ABOVE_FLOOR, left: 102, width: 117, height: 68, transformOrigin: "center bottom" },
+    { position: "absolute", bottom: GROUND_ABOVE_FLOOR, left: 72, width: 177, height: 113, transformOrigin: "center bottom" },
+    { position: "absolute", bottom: GROUND_ABOVE_FLOOR, left: 52, width: 219, height: 187, transformOrigin: "center bottom" },
+    { position: "absolute", bottom: GROUND_ABOVE_FLOOR, left: 23, width: 276, height: 300, transformOrigin: "center bottom" },
+    { position: "absolute", bottom: GROUND_ABOVE_FLOOR, left: 30, width: 262, height: 322, transformOrigin: "center bottom" },
+    { position: "absolute", bottom: GROUND_ABOVE_FLOOR, left: 7, width: 307, height: 380, transformOrigin: "center bottom" }
   ]
 } as const;
 
