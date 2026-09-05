@@ -137,7 +137,13 @@ export function KizukuApp() {
   /** True while a __DEV__ URL jump is driving state, so it is never written back. */
   const devJump = __DEV__ && typeof window !== "undefined" && !!window.location.search;
 
-  // Read once on launch. A returning user goes straight to the garden.
+  /*
+   * Read once on launch. A returning user goes straight to the garden.
+   *
+   * The dev jump sets the screen synchronously on mount; this resolves after it,
+   * so without the guard below a saved install would always yank you back to the
+   * garden and ?s=worry would look broken.
+   */
   useEffect(() => {
     let cancelled = false;
     loadState().then((saved) => {
@@ -149,14 +155,14 @@ export function KizukuApp() {
         setLastCompletedOn(saved.lastCompletedOn);
         setOnboarded(saved.onboarded);
         setPlantName(saved.plantName ?? "");
-        if (saved.onboarded) setScreen("home");
+        if (saved.onboarded && !devJump) setScreen("home");
       }
       setHydrated(true);
     });
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [devJump]);
 
   /*
    * Write on change, but never before the read resolves — without the guard the
@@ -563,6 +569,8 @@ function WorryScreen({
   onContinue: () => void;
   onTab: (tab: MainTab) => void;
 }) {
+  const [focused, setFocused] = useState(false);
+
   return (
     <GradientScreen personality={personality}>
       <View style={styles.flowContent}>
@@ -572,12 +580,14 @@ function WorryScreen({
           <Text style={styles.flowTitle}>what future worry is on your mind right now?</Text>
         </View>
 
-        <Slip note="be specific. the more honest you are, the better your action will be." personality={personality}>
+        <Slip note="be specific. the more honest you are, the better your action will be." personality={personality} focused={focused}>
           <TextInput
             accessibilityLabel="Future worry"
             autoFocus
             multiline
+            onBlur={() => setFocused(false)}
             onChangeText={onChange}
+            onFocus={() => setFocused(true)}
             placeholder="write anything. this stays private."
             placeholderTextColor={color.stone[500]}
             style={styles.input}
@@ -662,6 +672,34 @@ function ActionScreen({
   onSwap: () => void;
   onTab: (tab: MainTab) => void;
 }) {
+  const reduceMotion = useReduceMotionPreference();
+  const cardAnim = useRef(new Animated.Value(1)).current;
+
+  const handleSwap = () => {
+    if (reduceMotion) {
+      onSwap();
+      return;
+    }
+    Animated.timing(cardAnim, {
+      toValue: 0,
+      duration: 100,
+      easing: Easing.out(Easing.quad),
+      useNativeDriver: true
+    }).start(({ finished }) => {
+      // a second tap retargets the value and fires this callback with
+      // finished:false — without the guard the interrupted run would swap and
+      // fade in while the newer fade-out is still going
+      if (!finished) return;
+      onSwap();
+      Animated.timing(cardAnim, {
+        toValue: 1,
+        duration: 140,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true
+      }).start();
+    });
+  };
+
   return (
     <GradientScreen personality={personality}>
       <View style={styles.flowContent}>
@@ -671,7 +709,22 @@ function ActionScreen({
           <Text style={styles.flowTitle}>one thing. right now.</Text>
         </View>
 
-        <View style={styles.actionCard}>
+        <Animated.View
+          style={[
+            styles.actionCard,
+            {
+              opacity: cardAnim,
+              transform: [
+                {
+                  translateY: cardAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [6, 0]
+                  })
+                }
+              ]
+            }
+          ]}
+        >
           <View style={styles.actionTag}>
             <Icon name="sparkles" size={13} color={color.stone[500]} />
             <Text style={styles.actionTagText}>{action.tag}</Text>
@@ -682,11 +735,11 @@ function ActionScreen({
               five minutes is enough. how well you do it doesn't matter.
             </Text>
           </View>
-        </View>
+        </Animated.View>
 
         <View style={styles.inlineActionStack}>
           <HoldButton label="i'll do it now" onComplete={onCommit} />
-          <SecondaryButton label="this doesn't feel right" onPress={onSwap} />
+          <SecondaryButton label="this doesn't feel right" onPress={handleSwap} />
         </View>
       </View>
     </GradientScreen>
@@ -766,6 +819,8 @@ function ReflectionScreen({
   onContinue: () => void;
   onTab: (tab: MainTab) => void;
 }) {
+  const [focused, setFocused] = useState(false);
+
   useEffect(() => {
     preloadGrowthFrames();
   }, []);
@@ -781,11 +836,13 @@ function ReflectionScreen({
         >
           <Eyebrow>you came back</Eyebrow>
           <Text style={styles.flowTitle}>what happened when you did it?</Text>
-          <Slip note="your plant grows after you answer this." personality={personality}>
+          <Slip note="your plant grows after you answer this." personality={personality} focused={focused}>
             <TextInput
               accessibilityLabel="Reflection"
               multiline
+              onBlur={() => setFocused(false)}
               onChangeText={onChange}
+              onFocus={() => setFocused(true)}
               placeholder="no judgement. just what happened."
               placeholderTextColor={color.stone[500]}
               style={styles.input}
@@ -1314,6 +1371,60 @@ function WelcomeScreen({ onBegin }: { onBegin: () => void }) {
   );
 }
 
+function QuizOptionCard({
+  text,
+  active,
+  onPress,
+  reduceMotion
+}: {
+  text: string;
+  active: boolean;
+  onPress: () => void;
+  reduceMotion: boolean;
+}) {
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+
+  const handlePressIn = () => {
+    if (reduceMotion) return;
+    Animated.timing(scaleAnim, {
+      toValue: 0.98,
+      duration: 100,
+      easing: Easing.out(Easing.quad),
+      useNativeDriver: true
+    }).start();
+  };
+
+  const handlePressOut = () => {
+    if (reduceMotion) return;
+    Animated.timing(scaleAnim, {
+      toValue: 1,
+      duration: 160,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: true
+    }).start();
+  };
+
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityState={{ selected: active }}
+      onPress={onPress}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
+    >
+      <Animated.View
+        style={[
+          styles.option,
+          active && styles.optionSelected,
+          { transform: [{ scale: scaleAnim }] }
+        ]}
+      >
+        <Text style={[styles.optionText, active && styles.optionTextSelected]}>{text}</Text>
+      </Animated.View>
+    </Pressable>
+  );
+}
+
 function QuizScreen({
   onDone,
   onBack
@@ -1323,6 +1434,7 @@ function QuizScreen({
 }) {
   const [index, setIndex] = useState(0);
   const [answers, setAnswers] = useState<PersonalityType[]>([]);
+  const reduceMotion = useReduceMotionPreference();
   const question = quiz[index]!;
   const selected = answers[index];
   const last = index === quiz.length - 1;
@@ -1359,20 +1471,15 @@ function QuizScreen({
         <Text style={styles.flowTitle}>{question.prompt}</Text>
 
         <View style={styles.optionList}>
-          {question.options.map((option) => {
-            const active = selected === option.type;
-            return (
-              <Pressable
-                accessibilityRole="button"
-                accessibilityState={{ selected: active }}
-                key={option.type}
-                onPress={() => choose(option.type)}
-                style={({ pressed }) => [styles.option, active && styles.optionSelected, pressed && styles.pressed]}
-              >
-                <Text style={[styles.optionText, active && styles.optionTextSelected]}>{option.text}</Text>
-              </Pressable>
-            );
-          })}
+          {question.options.map((option) => (
+            <QuizOptionCard
+              key={option.type}
+              active={selected === option.type}
+              onPress={() => choose(option.type)}
+              reduceMotion={reduceMotion}
+              text={option.text}
+            />
+          ))}
         </View>
 
         <View style={styles.inlineAction}>
@@ -1509,16 +1616,51 @@ function RevealScreen({
 function Slip({
   children,
   note,
-  personality
+  personality,
+  focused = false
 }: {
   children: React.ReactNode;
   note: string;
   personality: PersonalityType;
+  focused?: boolean;
 }) {
   const [listening, setListening] = useState(false);
+  const reduceMotion = useReduceMotionPreference();
+  const focusAnim = useRef(new Animated.Value(0)).current;
+
+  /*
+   * The pad lifts when you start writing.
+   *
+   * It cannot do that by animating shadowOpacity: the native driver handles only
+   * transform and opacity, so a shadow tween has to run on the JS thread — and
+   * this fires exactly when that thread is busiest, raising the keyboard and
+   * relaying out the screen. It was also iOS-only, so on Android it burned
+   * frames and moved nothing.
+   *
+   * Lifting the card instead reads the same and stays native: it rises 2pt and
+   * grows by half a percent, so the static shadow underneath it reads deeper
+   * without being animated at all.
+   */
+  useEffect(() => {
+    if (reduceMotion) {
+      focusAnim.setValue(focused ? 1 : 0);
+      return;
+    }
+    Animated.timing(focusAnim, {
+      toValue: focused ? 1 : 0,
+      duration: 200,
+      easing: Easing.out(Easing.quad),
+      useNativeDriver: true
+    }).start();
+  }, [focusAnim, focused, reduceMotion]);
+
+  const lift = focusAnim.interpolate({ inputRange: [0, 1], outputRange: [0, -2] });
+  const swell = focusAnim.interpolate({ inputRange: [0, 1], outputRange: [1, 1.005] });
 
   return (
-    <View style={styles.slip}>
+    <Animated.View
+      style={[styles.slip, { transform: [{ translateY: lift }, { scale: swell }] }]}
+    >
       <Svg width="100%" height={13} viewBox="0 0 300 13" preserveAspectRatio="none">
         <Path d={TORN_EDGE} fill={color.paper.card} />
       </Svg>
@@ -1572,7 +1714,7 @@ function Slip({
           />
         </Pressable>
       </View>
-    </View>
+    </Animated.View>
   );
 }
 
@@ -1596,16 +1738,47 @@ function NamingScreen({
   const [name, setName] = useState("");
   const theme = themes[personality];
   const type = personalityTypes[personality];
+  const reduceMotion = useReduceMotionPreference();
+  const breath = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (reduceMotion) return;
+    const breathing = Animated.loop(
+      Animated.sequence([
+        Animated.timing(breath, {
+          toValue: 1,
+          duration: motion.ambientBreath,
+          easing: Easing.inOut(Easing.sin),
+          useNativeDriver: true
+        }),
+        Animated.timing(breath, {
+          toValue: 0,
+          duration: motion.ambientBreath,
+          easing: Easing.inOut(Easing.sin),
+          useNativeDriver: true
+        })
+      ])
+    );
+    breathing.start();
+    return () => breathing.stop();
+  }, [breath, reduceMotion]);
+
+  const plantScale = breath.interpolate({
+    inputRange: [0, 1],
+    outputRange: [1, 1.035]
+  });
 
   return (
     <View style={[styles.flex, { backgroundColor: theme.surface }]}>
       <ScrollView contentContainerStyle={styles.namingContent} showsVerticalScrollIndicator={false}>
-        <Image
-          accessibilityIgnoresInvertColors
-          resizeMode="contain"
-          source={plantFor(personality, "seed")}
-          style={styles.namingSeed}
-        />
+        <Animated.View style={{ transform: [{ scale: plantScale }] }}>
+          <Image
+            accessibilityIgnoresInvertColors
+            resizeMode="contain"
+            source={plantFor(personality, "seed")}
+            style={styles.namingSeed}
+          />
+        </Animated.View>
 
         <Text style={[styles.eyebrow, { color: theme.ink }]}>your {type.plant}</Text>
         <Text style={[styles.namingTitle, { color: theme.ink }]}>what will you call it?</Text>
