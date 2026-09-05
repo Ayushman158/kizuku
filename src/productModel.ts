@@ -150,20 +150,75 @@ export function actionsFor(personality: PersonalityType): number[] {
 }
 
 /**
- * Which action to offer, given who you are and what you have already done.
+ * Cues that make a worry point at one action rather than another.
+ *
+ * This is deliberately shallow — word spotting, not comprehension. It runs on
+ * the raw text in memory and nothing is stored or sent anywhere. It is used as
+ * a preference between actions the type already allows, never as an override,
+ * so a worry that matches nothing simply falls through to rotation and the app
+ * behaves exactly as it did before. A wrong guess costs a slightly less apt
+ * suggestion; it cannot produce an action the type would not have been given.
+ */
+const cues: Record<string, readonly string[]> = {
+  "reach out": ["someone", "friend", "family", "message", "text", "call", "reply", "replied",
+    "alone", "lonely", "partner", "mum", "dad", "brother", "sister", "everyone"],
+  "sit still": ["spiral", "spiralling", "racing", "can't stop", "cant stop", "overwhelmed",
+    "too much", "panic", "restless", "constantly", "won't stop", "wont stop"],
+  reframe: ["what if", "never", "always", "disaster", "worst", "catastroph", "certain",
+    "sure that", "convinced", "assume"],
+  "look out": ["stuck", "same", "nothing changes", "trapped", "going nowhere", "control",
+    "out of control"],
+  start: ["avoid", "avoiding", "putting off", "procrastin", "deadline", "haven't started",
+    "havent started", "should have", "behind"],
+  ask: ["don't know", "dont know", "unsure", "wondering", "think of me", "thinks", "guess",
+    "unclear", "maybe they"],
+  "stop early": ["perfect", "properly", "good enough", "right way", "not ready", "polish",
+    "get it right"],
+  "say why": ["point", "pointless", "meaning", "meaningless", "matter", "matters", "worth",
+    "why am i", "empty"],
+  "leave it": ["list", "everything", "all of it", "juggling", "no time", "too many",
+    "on top of"]
+};
+
+/** How strongly a worry points at one action. 0 when it says nothing about it. */
+function cueScore(tag: string, worry: string): number {
+  const text = worry.toLowerCase();
+  return (cues[tag] ?? []).reduce((score, cue) => (text.includes(cue) ? score + 1 : score), 0);
+}
+
+/**
+ * Which action to offer, given who you are, what you wrote, and what you have
+ * already been given.
  *
  * Least-recently-used within the type's own pool, so a returning user works
- * through the whole set before anything repeats. `recentTags` is oldest-first,
- * exactly as `entries` is stored.
+ * through the whole set before anything repeats — and among equally fresh
+ * actions, the one the worry points at wins. `recentTags` is oldest-first,
+ * exactly as `entries` is stored, and includes declined actions: something you
+ * turned down yesterday should not come straight back today.
  */
-export function chooseAction(personality: PersonalityType, recentTags: readonly string[]): number {
+export function chooseAction(
+  personality: PersonalityType,
+  recentTags: readonly string[],
+  worry = ""
+): number {
   const eligible = actionsFor(personality);
-  const lastUsedAt = (index: number) => {
-    const tag = actionTemplates[index]!.tag;
-    const at = recentTags.lastIndexOf(tag);
-    return at === -1 ? -1 : at;
-  };
-  return eligible.reduce((best, index) => (lastUsedAt(index) < lastUsedAt(best) ? index : best), eligible[0]!);
+  // Whatever you were handed last never comes straight back, however loudly the
+  // worry points at it — a cue is a preference, not a reason to repeat yourself.
+  const lastTag = recentTags[recentTags.length - 1];
+  const fresh = eligible.filter((index) => actionTemplates[index]!.tag !== lastTag);
+  const candidates = fresh.length > 0 ? fresh : eligible;
+
+  const lastUsedAt = (index: number) => recentTags.lastIndexOf(actionTemplates[index]!.tag);
+  const rank = (index: number): [number, number] => [
+    cueScore(actionTemplates[index]!.tag, worry),
+    -lastUsedAt(index)
+  ];
+  return candidates.reduce((best, index) => {
+    const [cue, fresh] = rank(index);
+    const [bestCue, bestFresh] = rank(best);
+    if (cue !== bestCue) return cue > bestCue ? index : best;
+    return fresh > bestFresh ? index : best;
+  }, candidates[0]!);
 }
 
 /**

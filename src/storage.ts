@@ -4,22 +4,28 @@ import { personalityTypes, type PersonalityType } from "./productModel";
 /**
  * On-device persistence.
  *
- * v2 keeps the reflection text, because the journal is a record you come back
- * and read. That is still on-device and nothing leaves the phone — the profile's
- * "on-device only" row stays true — but it is a deliberate widening of what is
- * kept, so it is worth naming here.
+ * v3 records whether each action was actually done. v2 wrote an entry either
+ * way, so declining one ("i didn't do it — that's ok") still planted a sprout
+ * in the garden and added a journal page — a record of something that did not
+ * happen. The flag lets each reader ask its own question: the journal and the
+ * garden want what you did, action selection wants what you were last offered.
  *
- * What is still NEVER stored: the worry. It is the rawest thing the user types,
- * it is only needed to pick an action, and the journal has no use for it. Keep
- * it that way.
+ * Everything here stays on the phone — the profile's "on-device only" row is
+ * still true. The reflection text is kept because the journal is a record you
+ * come back and read.
+ *
+ * What is still NEVER stored: the worry. It is the rawest thing the user types.
+ * It is read once, in memory, to pick an action, and then it is gone. Keep it
+ * that way.
  *
  * Nothing here throws. A corrupt or older payload means "treat this as a fresh
  * install", never a crash on launch, so every read is guarded and every write is
  * fire-and-forget.
  */
 
-const KEY = "kizuku.state.v2";
-/** v1 kept only tags. Its entries are migrated with their text left empty. */
+const KEY = "kizuku.state.v3";
+/** v2 had entries but no `done`. v1 kept only tags. */
+const KEY_V2 = "kizuku.state.v2";
 const KEY_V1 = "kizuku.state.v1";
 
 /** One day's page in the journal. */
@@ -30,10 +36,12 @@ export type Entry = {
   tag: string;
   /** what the user wrote afterwards — empty if they skipped it */
   text: string;
+  /** whether they did the action. false means it was offered and declined. */
+  done: boolean;
 };
 
 export type StoredState = {
-  version: 2;
+  version: 3;
   personality: PersonalityType;
   actionsDone: number;
   /** newest last; the journal reads this */
@@ -61,7 +69,10 @@ function isEntry(value: unknown): value is Entry {
   if (typeof value !== "object" || value === null) return false;
   const entry = value as Partial<Entry>;
   return (
-    typeof entry.date === "string" && typeof entry.tag === "string" && typeof entry.text === "string"
+    typeof entry.date === "string" &&
+    typeof entry.tag === "string" &&
+    typeof entry.text === "string" &&
+    typeof entry.done === "boolean"
   );
 }
 
@@ -69,7 +80,7 @@ function isValid(value: unknown): value is StoredState {
   if (typeof value !== "object" || value === null) return false;
   const state = value as Partial<StoredState>;
   return (
-    state.version === 2 &&
+    state.version === 3 &&
     typeof state.personality === "string" &&
     state.personality in personalityTypes &&
     typeof state.actionsDone === "number" &&
@@ -80,6 +91,44 @@ function isValid(value: unknown): value is StoredState {
     (state.plantName === undefined || typeof state.plantName === "string") &&
     typeof state.onboarded === "boolean"
   );
+}
+
+function personalityOr(value: unknown, fallback: PersonalityType): PersonalityType {
+  return typeof value === "string" && value in personalityTypes
+    ? (value as PersonalityType)
+    : fallback;
+}
+
+/**
+ * v2 entries carry no `done`, and which ones were declines is not recoverable —
+ * v2 wrote both the same way. They are marked done: true rather than dropped:
+ * an existing garden should not lose sprouts on upgrade, and over-counting a
+ * few past declines is kinder than deleting a record someone has watched grow.
+ */
+function migrateV2(raw: string): StoredState | null {
+  try {
+    const old = JSON.parse(raw) as Record<string, unknown>;
+    if (old?.version !== 2) return null;
+    const entries = Array.isArray(old.entries) ? (old.entries as unknown[]) : [];
+    return {
+      version: 3,
+      personality: personalityOr(old.personality, "optimizer"),
+      actionsDone: typeof old.actionsDone === "number" ? old.actionsDone : 0,
+      entries: entries
+        .filter((entry): entry is Record<string, unknown> => typeof entry === "object" && entry !== null)
+        .map((entry) => ({
+          date: typeof entry.date === "string" ? entry.date : "",
+          tag: typeof entry.tag === "string" ? entry.tag : "",
+          text: typeof entry.text === "string" ? entry.text : "",
+          done: true
+        })),
+      plantName: typeof old.plantName === "string" ? old.plantName : undefined,
+      lastCompletedOn: typeof old.lastCompletedOn === "string" ? old.lastCompletedOn : null,
+      onboarded: old.onboarded === true
+    };
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -93,16 +142,13 @@ function migrateV1(raw: string): StoredState | null {
     if (old?.version !== 1) return null;
     const tags = Array.isArray(old.history) ? (old.history as unknown[]) : [];
     return {
-      version: 2,
-      personality: (typeof old.personality === "string" && old.personality in personalityTypes
-        ? old.personality
-        : "optimizer") as PersonalityType,
+      version: 3,
+      personality: personalityOr(old.personality, "optimizer"),
       actionsDone: typeof old.actionsDone === "number" ? old.actionsDone : 0,
       entries: tags
         .filter((tag): tag is string => typeof tag === "string")
-        .map((tag) => ({ date: "", tag, text: "" })),
-      lastCompletedOn:
-        typeof old.lastCompletedOn === "string" ? old.lastCompletedOn : null,
+        .map((tag) => ({ date: "", tag, text: "", done: true })),
+      lastCompletedOn: typeof old.lastCompletedOn === "string" ? old.lastCompletedOn : null,
       onboarded: old.onboarded === true
     };
   } catch {
@@ -118,13 +164,17 @@ export async function loadState(): Promise<StoredState | null> {
       if (isValid(parsed)) return parsed;
     }
 
-    // nothing at v2 — an existing v1 install is carried forward once
-    const legacy = await AsyncStorage.getItem(KEY_V1);
-    if (legacy) {
-      const migrated = migrateV1(legacy);
+    // nothing at v3 — an older install is carried forward once, newest first
+    for (const [key, migrate] of [
+      [KEY_V2, migrateV2],
+      [KEY_V1, migrateV1]
+    ] as const) {
+      const legacy = await AsyncStorage.getItem(key);
+      if (!legacy) continue;
+      const migrated = migrate(legacy);
       if (migrated) {
         await saveState(migrated);
-        await AsyncStorage.removeItem(KEY_V1);
+        await AsyncStorage.removeItem(key);
         return migrated;
       }
     }
@@ -144,7 +194,7 @@ export async function saveState(next: StoredState): Promise<void> {
 
 export async function clearState(): Promise<void> {
   try {
-    await AsyncStorage.multiRemove([KEY, KEY_V1]);
+    await AsyncStorage.multiRemove([KEY, KEY_V2, KEY_V1]);
   } catch {
     // nothing to do — the caller resets in-memory state either way
   }

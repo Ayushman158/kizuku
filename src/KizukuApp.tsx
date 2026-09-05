@@ -144,13 +144,16 @@ export function KizukuApp() {
   const action = actionTemplates[actionIndex % actionTemplates.length]!;
 
   /*
-   * Who you are, and what you have already been given. The worry chooses
-   * nothing — it is never stored, and running its character codes through a
-   * modulo was theatre that the thinking screen dressed up as deliberation.
-   * Personality was not even an input, so the quiz changed only colours.
+   * Three real inputs: who you are, what you wrote, and what you have already
+   * been given. It used to be one fake one — the worry's character codes summed
+   * and taken modulo six, which the thinking screen dressed up as deliberation
+   * while personality was not consulted at all.
+   *
+   * The worry is read here and nowhere else. It is not stored, and it never
+   * leaves this function.
    */
   const pickAction = () => {
-    setActionIndex(chooseAction(personality, entries.map((entry) => entry.tag)));
+    setActionIndex(chooseAction(personality, entries.map((entry) => entry.tag), worry));
     setScreen("thinking");
   };
 
@@ -199,7 +202,7 @@ export function KizukuApp() {
     // saw the welcome screen again.
     if (!hydrated || devJump || !onboarded) return;
     saveState({
-      version: 2,
+      version: 3,
       personality,
       actionsDone,
       entries,
@@ -245,7 +248,7 @@ export function KizukuApp() {
   const completeReflection = () => {
     setActionsDone((count) => count + 1);
     // the page the journal will show: what you did, and what you said about it
-    setEntries((pages) => [...pages, { date: todayKey(), tag: action.tag, text: reflection.trim() }]);
+    setEntries((pages) => [...pages, { date: todayKey(), tag: action.tag, text: reflection.trim(), done: true }]);
     setLastCompletedOn(todayKey());
     setScreen("growth");
   };
@@ -337,9 +340,15 @@ export function KizukuApp() {
               value={reflection}
               onChange={setReflection}
               onBack={() => setScreen("action")}
+              /*
+               * "i didn't do it — that's ok". The entry is kept so the same
+               * action is not handed straight back tomorrow, but it is marked
+               * undone: it plants no sprout, writes no journal page, and does
+               * not mark the day tended, which is what the home screen would
+               * otherwise say to someone who just told us the opposite.
+               */
               onSkip={() => {
-                setEntries((pages) => [...pages, { date: todayKey(), tag: action.tag, text: "" }]);
-                setLastCompletedOn(todayKey());
+                setEntries((pages) => [...pages, { date: todayKey(), tag: action.tag, text: "", done: false }]);
                 setScreen("home");
               }}
               onContinue={completeReflection}
@@ -1182,8 +1191,14 @@ function PatternsScreen({
   onTab: (tab: MainTab) => void;
 }) {
   const type = personalityTypes[personality];
+  /*
+   * Declined actions are stored so they are not re-offered immediately, but
+   * nothing on this screen should count them: the garden records what you did,
+   * and the tag list says so directly underneath itself.
+   */
+  const done = entries.filter((entry) => entry.done);
   const counts = new Map<string, number>();
-  entries.forEach(({ tag }) => counts.set(tag, (counts.get(tag) ?? 0) + 1));
+  done.forEach(({ tag }) => counts.set(tag, (counts.get(tag) ?? 0) + 1));
   const ranked = [...counts.entries()].sort((a, b) => b[1] - a[1]);
   const most = ranked.length > 0 ? Math.max(...ranked.map(([, count]) => count)) : 1;
 
@@ -1209,7 +1224,7 @@ function PatternsScreen({
               <Text style={styles.patternAccent}>{type.headline.accent}</Text>
             </Text>
 
-            <Journal entries={entries} />
+            <Journal entries={done} />
 
             <View style={styles.insightCard}>
               <Eyebrow>moments of showing up</Eyebrow>
@@ -1217,7 +1232,7 @@ function PatternsScreen({
               <Text style={styles.cardMeta}>no calendar, no streak. this number only ever goes up.</Text>
             </View>
 
-            <GardenField entries={entries} personality={personality} />
+            <GardenField entries={done} personality={personality} />
 
             {ranked.length > 0 ? (
               <View style={styles.insightCard}>
