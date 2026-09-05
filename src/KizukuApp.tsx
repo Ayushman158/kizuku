@@ -1353,7 +1353,7 @@ function ProfileScreen({
 
         <SecondaryButton label="retake personality quiz" icon="refresh" onPress={onRetake} />
         <Pressable onPress={onReset} style={styles.resetButton}>
-          <Text style={styles.resetText}>reset prototype</Text>
+          <Text style={styles.resetText}>reset my garden</Text>
         </Pressable>
       </ScrollView>
       <BottomNav active="profile" onSelect={onTab} />

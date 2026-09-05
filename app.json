@@ -8,10 +8,15 @@
     "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "app.kizuku.ios"
+      "bundleIdentifier": "app.kizuku.ios",
+      "icon": "./assets/icon.png"
     },
     "android": {
-      "package": "app.kizuku.android"
+      "package": "app.kizuku.android",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#FBF8EE"
+      }
     },
     "extra": {
       "eas": {
@@ -29,6 +34,18 @@
       "display": "standalone",
       "orientation": "portrait",
       "lang": "en"
-    }
+    },
+    "plugins": [
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 180,
+          "resizeMode": "contain",
+          "backgroundColor": "#FBF8EE"
+        }
+      ]
+    ],
+    "icon": "./assets/icon.png"
   }
 }
