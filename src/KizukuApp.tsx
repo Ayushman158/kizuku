@@ -16,6 +16,7 @@ import {
   useWindowDimensions,
   View
 } from "react-native";
+import { Asset } from "expo-asset";
 import { LinearGradient } from "expo-linear-gradient";
 import {
   actionTemplates,
@@ -192,7 +193,7 @@ export function KizukuApp() {
    */
   useEffect(() => {
     let cancelled = false;
-    loadState().then((saved) => {
+    loadState().then(async (saved) => {
       if (cancelled) return;
       if (saved && !devJump) {
         setPersonality(saved.personality);
@@ -203,6 +204,26 @@ export function KizukuApp() {
         setPlantName(saved.plantName ?? "");
         if (saved.onboarded) setScreen("home");
       }
+
+      /*
+       * Warm the garden's images before showing it. Without this the screen
+       * appeared first and the landscape and the plant faded in behind it a
+       * beat later, so the first thing a returning user saw was their garden
+       * assembling itself — sometimes just a watering can on an empty field.
+       *
+       * Only what the first screen needs: the landscape, the stage they are on,
+       * and the next one, because growth cuts to it. A failure here is not
+       * worth blocking launch over — the images still load, just later.
+       */
+      const type = saved?.personality ?? "optimizer";
+      const stage = stageFor(saved?.actionsDone ?? 0);
+      await Asset.loadAsync([
+        assets.background,
+        plants[type][stage - 1]!,
+        plants[type][Math.min(stage, 5)]!
+      ]).catch(() => {});
+      if (cancelled) return;
+
       setHydrated(true);
     });
     return () => {
@@ -1248,7 +1269,11 @@ function PatternsScreen({
   return (
     <View style={[styles.flex, styles.paperScreen]}>
       <ScrollView
-        contentContainerStyle={[styles.tabScroll, { paddingTop: insets.top + space.xl }]}
+        contentContainerStyle={[
+          styles.tabScroll,
+          // the nav grew by the home indicator, so the scroll has to clear it too
+          { paddingTop: insets.top + space.xl, paddingBottom: 108 + insets.bottom }
+        ]}
         showsVerticalScrollIndicator={false}
       >
         <Eyebrow>your pattern</Eyebrow>
@@ -1346,7 +1371,11 @@ function ProfileScreen({
   return (
     <View style={[styles.flex, styles.paperScreen]}>
       <ScrollView
-        contentContainerStyle={[styles.profileScroll, { paddingTop: insets.top + space.xl }]}
+        contentContainerStyle={[
+          styles.profileScroll,
+          // the nav grew by the home indicator, so the scroll has to clear it too
+          { paddingTop: insets.top + space.xl, paddingBottom: 108 + insets.bottom }
+        ]}
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.profileMark}>
@@ -1873,8 +1902,18 @@ function NamingScreen({
 
   return (
     <View style={[styles.flex, { backgroundColor: theme.surface }]}>
+      {/*
+        The actions live inside the scroll. They used to be absolutely pinned to
+        the bottom while the input sat in the scroll above, so raising the
+        keyboard slid the button up over the field the user was typing into.
+        automaticallyAdjustKeyboardInsets lets iOS inset by the real keyboard
+        height, and persistTaps lets the button take the first tap rather than
+        spending it dismissing the keyboard.
+      */}
       <ScrollView
+        automaticallyAdjustKeyboardInsets
         contentContainerStyle={[styles.namingContent, { paddingTop: insets.top + space.xl }]}
+        keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
         {/*
@@ -1913,17 +1952,17 @@ function NamingScreen({
             value={name}
           />
         </View>
-      </ScrollView>
 
-      <View style={styles.bottomAction}>
-        <PrimaryButton
-          label={name.trim() ? `plant ${name.trim()}` : "plant it"}
-          onPress={() => onDone(name.trim())}
-        />
-        <Pressable onPress={() => onDone("")} style={styles.namingSkip}>
-          <Text style={[styles.namingSkipText, { color: theme.ink }]}>i will name it later</Text>
-        </Pressable>
-      </View>
+        <View style={styles.namingActions}>
+          <PrimaryButton
+            label={name.trim() ? `plant ${name.trim()}` : "plant it"}
+            onPress={() => onDone(name.trim())}
+          />
+          <Pressable onPress={() => onDone("")} style={styles.namingSkip}>
+            <Text style={[styles.namingSkipText, { color: theme.ink }]}>i will name it later</Text>
+          </Pressable>
+        </View>
+      </ScrollView>
     </View>
   );
 }
@@ -2182,7 +2221,8 @@ const styles = StyleSheet.create({
 
   // type reveal
   revealContent: { paddingHorizontal: space.lg, paddingTop: space.xxl, paddingBottom: 108 },
-  namingContent: { paddingHorizontal: space.gutter, paddingTop: space.xxxl, paddingBottom: 140, alignItems: "flex-start" },
+  namingContent: { paddingHorizontal: space.gutter, paddingTop: space.xxxl, paddingBottom: space.xl, alignItems: "flex-start" },
+  namingActions: { alignSelf: "stretch", marginTop: space.xxl },
   namingSeedWrap: { alignSelf: "center", marginBottom: space.lg },
   namingSeed: { width: 116, height: 132 },
   namingTitle: { ...text.displayLg, marginTop: space.xxs },
