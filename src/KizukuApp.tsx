@@ -161,7 +161,14 @@ export function KizukuApp() {
   const openTab = (tab: MainTab) => setScreen(tab);
 
   /** True while a __DEV__ URL jump is driving state, so it is never written back. */
-  const devJump = __DEV__ && typeof window !== "undefined" && !!window.location.search;
+  /*
+   * React Native defines a global `window`, so a `typeof window` check passes on
+   * device and then `window.location` — which does not exist there — throws
+   * during render. Gate on the platform, and read location defensively.
+   */
+  const devQuery =
+    __DEV__ && Platform.OS === "web" ? (globalThis.location?.search ?? "") : "";
+  const devJump = devQuery.length > 0;
 
   /*
    * Read once on launch. A returning user goes straight to the garden.
@@ -219,8 +226,8 @@ export function KizukuApp() {
    * false in release builds, so this cannot ship.
    */
   useEffect(() => {
-    if (!__DEV__ || typeof window === "undefined") return;
-    const q = new URLSearchParams(window.location.search);
+    if (!devJump) return;
+    const q = new URLSearchParams(devQuery);
     const p = q.get("p") as PersonalityType | null;
     const n = q.get("n");
     const w = q.get("w");
@@ -232,6 +239,8 @@ export function KizukuApp() {
       setReflection("i did it, and it was smaller than i feared.");
     }
     if (target) setScreen(target);
+    // devQuery and devJump are constant for the life of the screen
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const startQuiz = () => {
