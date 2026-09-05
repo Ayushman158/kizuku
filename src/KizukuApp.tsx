@@ -629,7 +629,24 @@ function WorryScreen({
 
   return (
     <GradientScreen personality={personality}>
-      <View style={styles.flowContent}>
+      {/*
+        Scrolls, like the reflection screen, because the keyboard is up the
+        moment this screen appears — the input autoFocuses. Everything used to
+        sit in a fixed column: KeyboardAvoidingView's padding shrank the
+        container, nothing inside could yield (the slip's height is a
+        minHeight), and the content overflowed instead of moving, cutting "get
+        my action" in half. A keyboard's height is not a constant to design
+        around — predictive text, third-party keyboards and larger type all
+        change it — so the content scrolls rather than being fitted to one.
+        keyboardShouldPersistTaps means the button takes the first tap instead
+        of spending it dismissing the keyboard.
+      */}
+      <ScrollView
+        automaticallyAdjustKeyboardInsets
+        contentContainerStyle={styles.worryScroll}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
         <BackButton onPress={onBack} />
         <View style={styles.flowHeading}>
           <Eyebrow>today</Eyebrow>
@@ -655,7 +672,7 @@ function WorryScreen({
         <View style={styles.inlineAction}>
           <PrimaryButton label="get my action" disabled={value.trim().length < 4} onPress={onContinue} />
         </View>
-      </View>
+      </ScrollView>
     </GradientScreen>
   );
 }
@@ -886,6 +903,7 @@ function ReflectionScreen({
       <View style={styles.flowContent}>
         <BackButton onPress={onBack} />
         <ScrollView
+          automaticallyAdjustKeyboardInsets
           contentContainerStyle={styles.reflectionScroll}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
@@ -2189,6 +2207,10 @@ const styles = StyleSheet.create({
 
   // ritual flow — no tab bar, so the action sits a gutter off the bottom
   flowContent: { flex: 1, paddingHorizontal: space.gutter, paddingTop: space.md, paddingBottom: space.lg },
+  /* the worry screen's scrolling twin. No flexGrow: the content container
+     hugs its content, so the keyboard inset scrolls exactly as far as there
+     is something to reach and no further. */
+  worryScroll: { paddingHorizontal: space.gutter, paddingTop: space.md, paddingBottom: space.lg },
   flowHeading: { marginTop: space.lg },
   eyebrow: { ...text.eyebrow, color: color.forest[500] },
   flowTitle: { ...text.title, color: color.forest[600], marginTop: space.xs },
