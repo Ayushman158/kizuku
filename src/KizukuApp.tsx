@@ -40,7 +40,6 @@ import { HoldButton } from "./HoldButton";
 import { GrowthSequence, preloadGrowthFrames } from "./GrowthSequence";
 import Svg, { Circle, G, Path } from "react-native-svg";
 import KizukuMark from "../assets/kizuku-mark.svg";
-import MeditatingFigure from "../assets/kizuku-meditating.svg";
 import WateringCan from "../assets/kizuku-watering-can.svg";
 
 type Screen =
@@ -822,7 +821,6 @@ function ActionScreen({
 function CommittingScreen({ personality, onDone }: { personality: PersonalityType; onDone: () => void }) {
   const reduceMotion = useReduceMotionPreference();
   const progress = useRef(new Animated.Value(0)).current;
-  const figurePulse = useRef(new Animated.Value(0)).current;
   const [trackWidth, setTrackWidth] = useState(0);
 
   useEffect(() => {
@@ -833,20 +831,9 @@ function CommittingScreen({ personality, onDone }: { personality: PersonalityTyp
       easing: Easing.inOut(Easing.cubic),
       useNativeDriver: true
     });
-    const pulseAnimation = Animated.loop(
-      Animated.sequence([
-        Animated.timing(figurePulse, { toValue: 1, duration: 850, useNativeDriver: true }),
-        Animated.timing(figurePulse, { toValue: 0, duration: 850, useNativeDriver: true })
-      ])
-    );
-
     progressAnimation.start(({ finished }) => finished && onDone());
-    if (!reduceMotion) pulseAnimation.start();
-    return () => {
-      progressAnimation.stop();
-      pulseAnimation.stop();
-    };
-  }, [figurePulse, onDone, progress, reduceMotion]);
+    return () => progressAnimation.stop();
+  }, [onDone, progress, reduceMotion]);
 
   // width cannot be native-driven, so a full-width fill is translated instead — the
   // same move as HoldButton's progress line. This runs while GrowthScreen preloads
@@ -854,10 +841,8 @@ function CommittingScreen({ personality, onDone }: { personality: PersonalityTyp
   const fillTransform = trackWidth
     ? [{ translateX: progress.interpolate({ inputRange: [0, 1], outputRange: [-trackWidth, 0] }) }]
     : [{ translateX: -9999 }];
-  const figureScale = figurePulse.interpolate({ inputRange: [0, 1], outputRange: [1, 1.025] });
-
   return (
-    <LinearGradient colors={themes[personality].ritual} style={styles.flex}>
+    <LinearGradient colors={themes[personality].ritual} style={[styles.flex, styles.commitRoot]}>
       <View style={styles.commitCopy}>
         <Eyebrow>tending</Eyebrow>
         <Text style={styles.commitTitle}>a small thing,{"\n"}done with attention.</Text>
@@ -868,9 +853,6 @@ function CommittingScreen({ personality, onDone }: { personality: PersonalityTyp
       >
         <Animated.View style={[styles.progressFill, { width: "100%", transform: fillTransform }]} />
       </View>
-      <Animated.View style={[styles.commitFigure, { transform: [{ scale: figureScale }] }]}>
-        <MeditatingFigure width="100%" height="100%" />
-      </Animated.View>
     </LinearGradient>
   );
 }
@@ -2306,20 +2288,24 @@ const styles = StyleSheet.create({
   // thinking + committing
   thinkingOrb: { width: 124, height: 124, marginBottom: 36 },
   thinkingText: { ...text.title, fontFamily: font.serifLight, color: color.forest[600], marginTop: space.sm },
-  commitCopy: { position: "absolute", top: "28%", left: space.xl, right: space.xl, alignItems: "center" },
+  /*
+   * The copy and the line are one centred group. They used to be pinned at 28%
+   * and 58% with an illustration at the bottom; without it those percentages
+   * left the lower half of the screen empty.
+   */
+  commitRoot: { alignItems: "center", justifyContent: "center", paddingHorizontal: space.xl },
+  commitCopy: { alignItems: "center" },
   commitTitle: { ...text.display, color: color.forest[600], textAlign: "center", marginTop: space.md },
   progressTrack: {
-    position: "absolute",
-    top: "58%",
-    left: 62,
-    right: 62,
+    marginTop: space.xxl,
+    width: "100%",
+    maxWidth: 278,
     height: 3,
     borderRadius: 2,
     backgroundColor: "rgba(28,60,28,0.12)",
     overflow: "hidden"
   },
   progressFill: { height: 3, backgroundColor: color.forest[500] },
-  commitFigure: { position: "absolute", width: 72, height: 128, bottom: 45, alignSelf: "center" },
 
   // action
   actionCard: { borderRadius: radius.card, backgroundColor: color.paper.card, padding: space.lg, marginTop: space.lg, ...elevation.lifted },
