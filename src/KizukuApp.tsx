@@ -86,6 +86,9 @@ const TORN_EDGE =
  */
 const GROUND_ABOVE_FLOOR = 280;
 
+/** Height of the nav's row of icons, before any home-indicator inset below it. */
+const NAV_CONTENT = 82;
+
 /**
  * Every type's tree at each of its six stages, straight from the design file.
  * Indexed by stage - 1, so plantFor() is the only place that arithmetic lives.
@@ -2083,7 +2086,19 @@ function BottomNav({ active, onSelect }: { active: MainTab; onSelect: (tab: Main
   ];
 
   return (
-    <View style={[styles.bottomNav, { height: 96 + insets.bottom, paddingBottom: 14 + insets.bottom }]}>
+    /*
+     * The row of icons is 82pt tall. It should rest directly on top of the home
+     * indicator, so the padding below it IS the inset — not the inset plus the
+     * old 14pt, which counted the same gap twice and floated the icons 48pt off
+     * the bottom, further from the thumb than they were designed to be. Where
+     * there is no indicator, the original 14pt still applies.
+     */
+    <View
+      style={[
+        styles.bottomNav,
+        { height: NAV_CONTENT + Math.max(insets.bottom, 14), paddingBottom: Math.max(insets.bottom, 14) }
+      ]}
+    >
       {items.map((item) => {
         const selected = item.id === active;
         return (
@@ -2489,7 +2504,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    height: 96,
+    height: NAV_CONTENT + 14,
     paddingBottom: 14,
     borderTopWidth: 1,
     borderTopColor: "rgba(123,113,96,0.1)",
