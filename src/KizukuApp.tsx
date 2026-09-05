@@ -30,6 +30,7 @@ import {
   type PersonalityType
 } from "./productModel";
 import { clearState, loadState, saveState, todayKey, type Entry } from "./storage";
+import { journalPages } from "./journal";
 import { themes } from "./tokens";
 import { color, elevation, font, motion, radius, space, target, text } from "./tokens";
 import { Icon, type IconName } from "./Icon";
@@ -569,7 +570,7 @@ function HomeScreen({
             </Text>
             <Text style={[styles.homeCardBody, todayCompleted && styles.inverseMuted]}>
               {todayCompleted
-                ? "come back whenever you need to."
+                ? "if something else comes up, you can go again."
                 : "share a worry and get your action"}
             </Text>
           </View>
@@ -1027,10 +1028,15 @@ const PAGE_GAP = 10;
  * because it is yours and not ours.
  *
  * Newest first: coming back, you want yesterday, not your first day.
+ *
+ * A page is a day, not an entry. Nothing stops someone facing a second hard
+ * thing before bed — growth follows actions, never days — and when they did,
+ * this used to print two pages under the same date. Same-day entries share a
+ * page, in the order they happened.
  */
 function Journal({ entries }: { entries: Entry[] }) {
   const { width } = useWindowDimensions();
-  const pages = useMemo(() => [...entries].reverse(), [entries]);
+  const pages = useMemo(() => journalPages(entries), [entries]);
   const [page, setPage] = useState(0);
   // leave PEEK visible of the page after this one
   const pageWidth = Math.min(width, 430) - space.gutter * 2 - PEEK;
@@ -1065,26 +1071,36 @@ function Journal({ entries }: { entries: Entry[] }) {
         }
         style={styles.journalPages}
       >
-        {pages.map((entry, index) => (
+        {pages.map((day, index) => (
           <View
-            key={`${entry.date}-${index}`}
+            key={`${day.date}-${index}`}
             style={[
               styles.journalPage,
               { width: pageWidth, marginRight: index === pages.length - 1 ? 0 : PAGE_GAP }
             ]}
           >
             <View style={styles.journalDateRow}>
-              <Text style={styles.journalDate}>{prettyDate(entry.date)}</Text>
-              <View style={styles.tag}>
-                <Text style={styles.tagText}>{entry.tag}</Text>
-              </View>
+              <Text style={styles.journalDate}>{prettyDate(day.date)}</Text>
+              {day.entries.length > 1 ? (
+                <Text style={styles.journalCount}>{day.entries.length} moments</Text>
+              ) : null}
             </View>
 
-            {entry.text ? (
-              <Text style={styles.journalText}>{entry.text}</Text>
-            ) : (
-              <Text style={styles.journalBlank}>you skipped this one. that is allowed.</Text>
-            )}
+            {day.entries.map((entry, moment) => (
+              <View key={moment} style={moment > 0 ? styles.journalMoment : undefined}>
+                <View style={styles.journalTagRow}>
+                  <View style={styles.tag}>
+                    <Text style={styles.tagText}>{entry.tag}</Text>
+                  </View>
+                </View>
+
+                {entry.text ? (
+                  <Text style={styles.journalText}>{entry.text}</Text>
+                ) : (
+                  <Text style={styles.journalBlank}>you did this one, and left the page empty.</Text>
+                )}
+              </View>
+            ))}
           </View>
         ))}
       </ScrollView>
@@ -1284,8 +1300,14 @@ function ProfileScreen({
 }) {
   const type = personalityTypes[personality];
   const stage = stageFor(actionsDone);
+  /*
+   * Facts about the app, not settings. They used to carry a chevron each, which
+   * is the standard "tap to change this" affordance on rows that were plain
+   * Views and did nothing. "notifications · gentle · 1x/day" went further and
+   * described a schedule for a feature that does not exist — there is no
+   * notification code in the app and no dependency that could send one.
+   */
   const rows: Array<{ icon: IconName; label: string; value: string }> = [
-    { icon: "moon", label: "notifications", value: "gentle · 1x/day" },
     { icon: "eye", label: "theme", value: "forest" },
     { icon: "lock", label: "privacy", value: "on-device only" }
   ];
@@ -1315,7 +1337,6 @@ function ProfileScreen({
               </View>
               <View style={styles.settingsValue}>
                 <Text style={styles.settingsValueText}>{row.value}</Text>
-                <Icon name="chevron-forward" size={14} color={color.stone[500]} />
               </View>
             </View>
           ))}
@@ -2292,6 +2313,8 @@ const styles = StyleSheet.create({
     minHeight: 168,
     ...elevation.raised
   },
+  journalTagRow: { flexDirection: "row", marginBottom: space.xs },
+  journalMoment: { marginTop: space.md, borderTopWidth: 1, borderTopColor: color.paper[300], paddingTop: space.md },
   journalDateRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.sm, marginBottom: space.xs },
   journalDate: { ...text.label, color: color.stone[500] },
   /* the user's hand, not the interface face */
