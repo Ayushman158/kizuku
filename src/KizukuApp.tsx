@@ -9,7 +9,6 @@ import {
   PanResponder,
   Platform,
   Pressable,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
@@ -36,6 +35,7 @@ import { color, elevation, font, motion, radius, space, target, text } from "./t
 import { Icon, type IconName } from "./Icon";
 import { ThinkingOrb } from "./ThinkingOrb";
 import { Watering } from "./Watering";
+import { SafeAreaProvider, useSafeAreaInsets } from "react-native-safe-area-context";
 import { HoldButton } from "./HoldButton";
 import { GrowthSequence, preloadGrowthFrames } from "./GrowthSequence";
 import Svg, { Circle, G, Path } from "react-native-svg";
@@ -286,8 +286,9 @@ export function KizukuApp() {
   }
 
   return (
-    <View style={styles.stage}>
-      <SafeAreaView style={styles.device}>
+    <SafeAreaProvider>
+      <View style={styles.stage}>
+      <View style={styles.device}>
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : undefined}
           style={styles.flex}
@@ -429,8 +430,9 @@ export function KizukuApp() {
             />
           ) : null}
         </KeyboardAvoidingView>
-      </SafeAreaView>
-    </View>
+      </View>
+      </View>
+    </SafeAreaProvider>
   );
 }
 
@@ -451,6 +453,7 @@ function HomeScreen({
   onTab: (tab: MainTab) => void;
   onProfile: () => void;
 }) {
+  const insets = useSafeAreaInsets();
   const reduceMotion = useReduceMotionPreference();
   const { width } = useWindowDimensions();
   const stage = stageFor(actionsDone);
@@ -549,7 +552,7 @@ function HomeScreen({
         resizeMode="stretch"
         style={[styles.homeBackground, { transform: [{ translateX: backgroundTranslate }] }]}
       />
-      <View style={styles.homeHeader}>
+      <View style={[styles.homeHeader, { paddingTop: insets.top + space.md }]}>
         <View style={styles.brandBlock}>
           <View style={styles.brandRow}>
             <KizukuMark width={34} height={34} />
@@ -1235,6 +1238,7 @@ function PatternsScreen({
    * nothing on this screen should count them: the garden records what you did,
    * and the tag list says so directly underneath itself.
    */
+  const insets = useSafeAreaInsets();
   const done = entries.filter((entry) => entry.done);
   const counts = new Map<string, number>();
   done.forEach(({ tag }) => counts.set(tag, (counts.get(tag) ?? 0) + 1));
@@ -1243,7 +1247,10 @@ function PatternsScreen({
 
   return (
     <View style={[styles.flex, styles.paperScreen]}>
-      <ScrollView contentContainerStyle={styles.tabScroll} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={[styles.tabScroll, { paddingTop: insets.top + space.xl }]}
+        showsVerticalScrollIndicator={false}
+      >
         <Eyebrow>your pattern</Eyebrow>
 
         {actionsDone === 0 ? (
@@ -1321,6 +1328,7 @@ function ProfileScreen({
   onTab: (tab: MainTab) => void;
   onReset: () => void;
 }) {
+  const insets = useSafeAreaInsets();
   const type = personalityTypes[personality];
   const stage = stageFor(actionsDone);
   /*
@@ -1337,7 +1345,10 @@ function ProfileScreen({
 
   return (
     <View style={[styles.flex, styles.paperScreen]}>
-      <ScrollView contentContainerStyle={styles.profileScroll} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={[styles.profileScroll, { paddingTop: insets.top + space.xl }]}
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.profileMark}>
           <Image source={plantFor(personality, stage)} resizeMode="contain" style={styles.profileSeed} />
         </View>
@@ -1417,9 +1428,13 @@ function TypeEmblem({ personality, ink, edge }: { personality: PersonalityType; 
  * on the screen and it earns more as a sign-off than as a headline.
  */
 function WelcomeScreen({ onBegin }: { onBegin: () => void }) {
+  const insets = useSafeAreaInsets();
   return (
     <View style={[styles.flex, styles.paperScreen]}>
-      <ScrollView contentContainerStyle={styles.welcomeContent} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={[styles.welcomeContent, { paddingTop: insets.top + space.xl }]}
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.welcomeMark}>
           <KizukuMark width={30} height={30} />
         </View>
@@ -1514,6 +1529,7 @@ function QuizScreen({
   onDone: (answers: PersonalityType[]) => void;
   onBack: () => void;
 }) {
+  const insets = useSafeAreaInsets();
   const [index, setIndex] = useState(0);
   const [answers, setAnswers] = useState<PersonalityType[]>([]);
   const reduceMotion = useReduceMotionPreference();
@@ -1536,7 +1552,7 @@ function QuizScreen({
 
   return (
     <View style={[styles.flex, styles.paperScreen]}>
-      <View style={styles.flowContent}>
+      <View style={[styles.flowContent, { paddingTop: insets.top + space.md }]}>
         <BackButton onPress={() => (index === 0 ? onBack() : setIndex(index - 1))} />
 
         <View style={styles.quizHead}>
@@ -1579,6 +1595,7 @@ function RevealScreen({
   personality: PersonalityType;
   onDone: () => void;
 }) {
+  const insets = useSafeAreaInsets();
   const type = personalityTypes[personality];
   const theme = themes[personality];
   const reduceMotion = useReduceMotionPreference();
@@ -1625,7 +1642,10 @@ function RevealScreen({
 
   return (
     <View style={[styles.flex, { backgroundColor: theme.surface }]}>
-      <ScrollView contentContainerStyle={styles.revealContent} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={[styles.revealContent, { paddingTop: insets.top + space.xl }]}
+        showsVerticalScrollIndicator={false}
+      >
         {/*
           The real plant, not an abstract mark. Every type already has its own
           artwork in assets/ and the garden uses it — the reveal was the one
@@ -1817,6 +1837,7 @@ function NamingScreen({
   personality: PersonalityType;
   onDone: (name: string) => void;
 }) {
+  const insets = useSafeAreaInsets();
   const [name, setName] = useState("");
   const theme = themes[personality];
   const type = personalityTypes[personality];
@@ -1852,7 +1873,10 @@ function NamingScreen({
 
   return (
     <View style={[styles.flex, { backgroundColor: theme.surface }]}>
-      <ScrollView contentContainerStyle={styles.namingContent} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={[styles.namingContent, { paddingTop: insets.top + space.xl }]}
+        showsVerticalScrollIndicator={false}
+      >
         {/*
           alignSelf lives on the wrapper, not the image. The breathing animation
           put an Animated.View between the image and the column, so centring the
@@ -1911,6 +1935,7 @@ function GradientScreen({
   personality: PersonalityType;
   children: React.ReactNode;
 }) {
+  const insets = useSafeAreaInsets();
   const reduceMotion = useReduceMotionPreference();
   const entrance = useRef(new Animated.Value(0)).current;
 
@@ -1930,7 +1955,17 @@ function GradientScreen({
 
   return (
     <LinearGradient colors={themes[personality].ritual} style={styles.flex}>
-      <Animated.View style={[styles.flex, { opacity: entrance, transform: [{ translateY: rise }] }]}>
+      {/*
+        The gradient fills the screen; the padding is on the content inside it,
+        so colour reaches the status bar and the home indicator while the back
+        button and the copy still clear them.
+      */}
+      <Animated.View
+        style={[
+          styles.flex,
+          { paddingTop: insets.top, opacity: entrance, transform: [{ translateY: rise }] }
+        ]}
+      >
         {children}
       </Animated.View>
     </LinearGradient>
@@ -2001,6 +2036,7 @@ function SecondaryButton({
 }
 
 function BottomNav({ active, onSelect }: { active: MainTab; onSelect: (tab: MainTab) => void }) {
+  const insets = useSafeAreaInsets();
   const items: Array<{ id: MainTab; label: string; icon: IconName }> = [
     { id: "home", label: "garden", icon: "home" },
     { id: "patterns", label: "pattern", icon: "stats" },
@@ -2008,7 +2044,7 @@ function BottomNav({ active, onSelect }: { active: MainTab; onSelect: (tab: Main
   ];
 
   return (
-    <View style={styles.bottomNav}>
+    <View style={[styles.bottomNav, { height: 96 + insets.bottom, paddingBottom: 14 + insets.bottom }]}>
       {items.map((item) => {
         const selected = item.id === active;
         return (
