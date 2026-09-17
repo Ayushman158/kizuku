@@ -45,6 +45,7 @@ import WateringCan from "../assets/kizuku-watering-can.svg";
 
 type Screen =
   | "welcome"
+  | "promise"
   | "quiz"
   | "reveal"
   | "naming"
@@ -317,10 +318,14 @@ export function KizukuApp() {
           behavior={Platform.OS === "ios" ? "padding" : undefined}
           style={styles.flex}
         >
-          {screen === "welcome" ? <WelcomeScreen onBegin={startQuiz} /> : null}
+          {screen === "welcome" ? <WelcomeScreen onBegin={() => setScreen("promise")} /> : null}
+
+          {screen === "promise" ? (
+            <PromiseScreen onBegin={startQuiz} onBack={() => setScreen("welcome")} />
+          ) : null}
 
           {screen === "quiz" ? (
-            <QuizScreen onDone={finishQuiz} onBack={() => setScreen("welcome")} />
+            <QuizScreen onDone={finishQuiz} onBack={() => setScreen("promise")} />
           ) : null}
 
           {screen === "reveal" ? (
@@ -1477,15 +1482,6 @@ function WelcomeScreen({ onBegin }: { onBegin: () => void }) {
           this is a small app for the kind of worry that lives in the future — the meeting that
           has not happened, the message you have not sent, the year you cannot picture yet.
         </Text>
-        <Text style={styles.welcomeLetter}>
-          it will not ask you to feel better. it asks you for one worry, gives you{" "}
-          <Text style={styles.welcomeEmphasis}>one small thing to do</Text>, and grows you a tree
-          when you do it. that is the whole app.
-        </Text>
-        <Text style={styles.welcomeLetter}>
-          there are no streaks here. a day you miss is a thinner ring, never a reset.
-        </Text>
-
         <Text style={styles.welcomeSignoff}>
           you cannot plan a forest.{"\n"}you can only plant a tree.
         </Text>
@@ -1493,8 +1489,8 @@ function WelcomeScreen({ onBegin }: { onBegin: () => void }) {
       </ScrollView>
 
       <View style={styles.welcomeAction}>
-        <PrimaryButton label="plant my first tree" onPress={onBegin} />
-        <Text style={styles.welcomeNote}>no account · nothing leaves your phone · 60 seconds</Text>
+        <PrimaryButton label="what this is" onPress={onBegin} />
+        <Text style={styles.welcomeNote}>no account · nothing leaves your phone</Text>
       </View>
     </View>
   );
@@ -1554,6 +1550,57 @@ function QuizOptionCard({
   );
 }
 
+/**
+ * What the app is, before it asks anything.
+ *
+ * The quiz used to be the second screen, so the third question — "what are you
+ * most honestly afraid of?" — arrived about forty seconds in, before the app had
+ * shown a single thing or earned the right to ask. This screen is the earning:
+ * four plain promises, three of which are unusual enough to be worth reading,
+ * and all four true of the build rather than aspirational.
+ */
+const PROMISES: Array<[string, string]> = [
+  ["no account", "there is nothing to sign up for, and nothing to sign in to."],
+  ["nothing leaves your phone", "the worry you write is read once, to pick your action, and never stored."],
+  ["no streaks", "a day you miss is a thinner ring, never a reset."],
+  ["stop whenever", "nothing here will chase you, and nothing is lost if you put it down."]
+];
+
+function PromiseScreen({ onBegin, onBack }: { onBegin: () => void; onBack: () => void }) {
+  const insets = useSafeAreaInsets();
+
+  return (
+    <View style={[styles.flex, styles.paperScreen]}>
+      <ScrollView
+        contentContainerStyle={[styles.promiseContent, { paddingTop: insets.top + space.md }]}
+        showsVerticalScrollIndicator={false}
+      >
+        <BackButton onPress={onBack} />
+
+        <Text style={styles.promiseLead}>
+          it asks you for one worry, and gives you{" "}
+          <Text style={styles.welcomeEmphasis}>one small thing to do</Text>. it will not ask you to
+          feel better. that is the whole app.
+        </Text>
+
+        <View style={styles.promiseList}>
+          {PROMISES.map(([term, gloss]) => (
+            <View key={term} style={styles.promiseRow}>
+              <Text style={styles.promiseTerm}>{term}</Text>
+              <Text style={styles.promiseGloss}>{gloss}</Text>
+            </View>
+          ))}
+        </View>
+      </ScrollView>
+
+      <View style={styles.welcomeAction}>
+        <PrimaryButton label="plant my first tree" onPress={onBegin} />
+        <Text style={styles.welcomeNote}>three questions · about 60 seconds</Text>
+      </View>
+    </View>
+  );
+}
+
 function QuizScreen({
   onDone,
   onBack
@@ -1581,6 +1628,14 @@ function QuizScreen({
     if (last) onDone(answers);
     else setIndex(index + 1);
   };
+
+  /*
+   * The last question asks what you are most afraid of. The first two are about
+   * what you do; this one is not, and requiring it is the one place onboarding
+   * takes something rather than asks. Skipping leaves the answer unset and the
+   * type is decided by the two that were given.
+   */
+  const declineLast = () => onDone(answers.slice(0, quiz.length - 1));
 
   return (
     <View style={[styles.flex, styles.paperScreen]}>
@@ -1614,6 +1669,11 @@ function QuizScreen({
 
         <View style={styles.inlineAction}>
           <PrimaryButton label={last ? "see my result" : "next"} disabled={!selected} onPress={advance} />
+          {last ? (
+            <Pressable onPress={declineLast} style={styles.quizDecline}>
+              <Text style={styles.quizDeclineText}>i’d rather not say</Text>
+            </Pressable>
+          ) : null}
         </View>
       </View>
     </View>
@@ -2199,6 +2259,14 @@ const styles = StyleSheet.create({
     gap: space.md
   },
   welcomeMark: { alignSelf: "flex-start", marginBottom: space.xs, opacity: 0.9 },
+  quizDecline: { paddingVertical: space.md, alignItems: "center", minHeight: target.min },
+  quizDeclineText: { ...text.caption, color: color.stone[500], textDecorationLine: "underline" },
+  promiseContent: { flexGrow: 1, paddingHorizontal: space.gutter, paddingBottom: space.lg, justifyContent: "center", gap: space.xl },
+  promiseLead: { ...text.bodyLg, color: color.stone[700] },
+  promiseList: { gap: space.lg },
+  promiseRow: { gap: 3 },
+  promiseTerm: { ...text.label, fontFamily: font.sansMedium, color: color.forest[600] },
+  promiseGloss: { ...text.body, color: color.stone[500] },
   welcomeGreeting: { ...text.title, color: color.forest[600] },
   /* the letter is set in the reading serif, not the interface sans — it is
      prose from a person, not interface copy */
