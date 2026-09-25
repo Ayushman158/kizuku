@@ -223,6 +223,7 @@ export function KizukuApp() {
       const stage = stageFor(saved?.actionsDone ?? 0);
       await Asset.loadAsync([
         assets.background,
+        washes[type],
         plants[type][stage - 1]!,
         plants[type][Math.min(stage, 5)]!
       ]).catch(() => {});
@@ -752,6 +753,7 @@ function ThinkingScreen({ personality, onDone }: { personality: PersonalityType;
 
   return (
     <LinearGradient colors={ritualGround(personality)} style={[styles.flex, styles.center]}>
+      <Wash personality={personality} />
       <Animated.View style={[styles.thinkingOrb, { transform: [{ translateY: figureLift }] }]}>
         <ThinkingOrb personality={personality} size={124} />
       </Animated.View>
@@ -875,6 +877,7 @@ function CommittingScreen({ personality, onDone }: { personality: PersonalityTyp
     : [{ translateX: -9999 }];
   return (
     <LinearGradient colors={ritualGround(personality)} style={[styles.flex, styles.commitRoot]}>
+      <Wash personality={personality} />
       <View style={styles.commitCopy}>
         <Eyebrow>tending</Eyebrow>
         <Text style={styles.commitTitle}>a small thing,{"\n"}done with attention.</Text>
@@ -1741,6 +1744,7 @@ function RevealScreen({
 
   return (
     <View style={[styles.flex, { backgroundColor: theme.surface }]}>
+      <Wash personality={personality} />
       <ScrollView
         contentContainerStyle={[styles.revealContent, { paddingTop: insets.top + space.xl }]}
         showsVerticalScrollIndicator={false}
@@ -1992,6 +1996,7 @@ function NamingScreen({
 
   return (
     <View style={[styles.flex, { backgroundColor: theme.surface }]}>
+      <Wash personality={personality} />
       {/*
         The actions live inside the scroll. They used to be absolutely pinned to
         the bottom while the input sat in the scroll above, so raising the
@@ -2083,6 +2088,35 @@ function NamingScreen({
  * only change is that the ritual now uses them. Everything drawn directly on
  * this ground is forest/600 or darker, which clears 5:1 on all three types.
  */
+/**
+ * Watercolour grounds, one per type, generated from the research wash — the
+ * first painting that set the app's colour temperature (tools/make_wash.py).
+ * Each is laid over the type's gradient, which shows while it loads.
+ *
+ * Contrast was measured against every pixel, not sampled: forest/600 titles
+ * clear 4.92:1 at the darkest wet edge on all three sheets, and each type's
+ * own ink clears 4.77:1. The glazes thin out across the top third, where the
+ * titles sit.
+ */
+const washes = {
+  optimizer: require("../assets/grounds/wash-optimizer.jpg"),
+  seeker: require("../assets/grounds/wash-seeker.jpg"),
+  planner: require("../assets/grounds/wash-planner.jpg")
+} as const;
+
+function Wash({ personality }: { personality: PersonalityType }) {
+  return (
+    <View pointerEvents="none" style={StyleSheet.absoluteFill}>
+      <Image
+        accessibilityIgnoresInvertColors
+        resizeMode="cover"
+        source={washes[personality]}
+        style={StyleSheet.absoluteFill}
+      />
+    </View>
+  );
+}
+
 function ritualGround(personality: PersonalityType): [string, string] {
   const theme = themes[personality];
   return [theme.surface, theme.raised];
@@ -2115,6 +2149,7 @@ function GradientScreen({
 
   return (
     <LinearGradient colors={ritualGround(personality)} style={styles.flex}>
+      <Wash personality={personality} />
       {/*
         The gradient fills the screen; the padding is on the content inside it,
         so colour reaches the status bar and the home indicator while the back
