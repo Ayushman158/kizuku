@@ -136,6 +136,33 @@ export const radius = {
   pill: 999
 } as const;
 
+/**
+ * The crafted edge — a hard, unblurred offset in a darker shade, as if the
+ * surface were cut from card and set down on the page. It is what gives
+ * Finch's buttons and cards their weight: a darker band underneath, not a
+ * glow around.
+ *
+ * The soft shadows below sit at 8–12% opacity over 16–18px of blur, which is
+ * much of why the app read as washed out. This is the same forest tint with
+ * no blur at all. One shade, `ink.edge`, is translucent on purpose: it reads
+ * as a darker band on parchment and on all three type surfaces alike.
+ */
+export const ink = {
+  /** the hard offset under a paper surface, on any ground */
+  edge: "rgba(28,60,28,0.26)",
+  /** the outline a paper surface carries so it holds its shape on colour */
+  line: "rgba(28,60,28,0.2)"
+} as const;
+
+export function stamp(shade: string, depth = 4): ViewStyle {
+  return Platform.select({
+    ios: { shadowColor: shade, shadowOffset: { width: 0, height: depth }, shadowOpacity: 1, shadowRadius: 0 },
+    // Android elevation can only blur, so the edge is drawn as a border instead
+    android: { borderBottomWidth: depth, borderBottomColor: shade },
+    default: { boxShadow: `0 ${depth}px 0 ${shade}` }
+  }) as ViewStyle;
+}
+
 /** Shadows carry the forest tint — a neutral shadow reads as dirt on parchment. */
 export const elevation = {
   flat: { borderWidth: 1, borderColor: color.hairline } as ViewStyle,

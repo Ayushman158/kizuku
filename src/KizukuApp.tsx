@@ -32,7 +32,7 @@ import {
 import { clearState, loadState, saveState, todayKey, type Entry } from "./storage";
 import { journalPages } from "./journal";
 import { themes } from "./tokens";
-import { color, elevation, font, motion, radius, space, target, text } from "./tokens";
+import { color, elevation, font, ink, motion, radius, space, stamp, target, text } from "./tokens";
 import { Icon, type IconName } from "./Icon";
 import { ThinkingOrb } from "./ThinkingOrb";
 import { Watering } from "./Watering";
@@ -615,7 +615,7 @@ function HomeScreen({
           style={({ pressed }) => [
             styles.homeCard,
             todayCompleted && styles.homeCardCompleted,
-            pressed && styles.pressed
+            pressed && { transform: [{ translateY: 3 }], ...stamp(todayCompleted ? color.forest[700] : ink.edge, 2) }
           ]}
         >
           <View style={styles.homeCardCopy}>
@@ -751,7 +751,7 @@ function ThinkingScreen({ personality, onDone }: { personality: PersonalityType;
   const figureLift = breathe.interpolate({ inputRange: [0, 1], outputRange: [2, -2] });
 
   return (
-    <LinearGradient colors={themes[personality].ritual} style={[styles.flex, styles.center]}>
+    <LinearGradient colors={ritualGround(personality)} style={[styles.flex, styles.center]}>
       <Animated.View style={[styles.thinkingOrb, { transform: [{ translateY: figureLift }] }]}>
         <ThinkingOrb personality={personality} size={124} />
       </Animated.View>
@@ -874,7 +874,7 @@ function CommittingScreen({ personality, onDone }: { personality: PersonalityTyp
     ? [{ translateX: progress.interpolate({ inputRange: [0, 1], outputRange: [-trackWidth, 0] }) }]
     : [{ translateX: -9999 }];
   return (
-    <LinearGradient colors={themes[personality].ritual} style={[styles.flex, styles.commitRoot]}>
+    <LinearGradient colors={ritualGround(personality)} style={[styles.flex, styles.commitRoot]}>
       <View style={styles.commitCopy}>
         <Eyebrow>tending</Eyebrow>
         <Text style={styles.commitTitle}>a small thing,{"\n"}done with attention.</Text>
@@ -2049,7 +2049,7 @@ function NamingScreen({
               accessibilityLabel="Suggest another name"
               accessibilityRole="button"
               onPress={() => setName((current) => suggestName(current))}
-              style={({ pressed }) => [styles.shuffleButton, pressed && styles.pressed]}
+              style={({ pressed }) => [styles.shuffleButton, pressed && styles.stampPressed]}
             >
               <Icon name="refresh" size={17} color={color.forest[500]} />
               <Text style={styles.shuffleText}>shuffle</Text>
@@ -2070,6 +2070,22 @@ function NamingScreen({
       </ScrollView>
     </View>
   );
+}
+
+/**
+ * The ground the daily ritual stands on: the type's own surface, deepening
+ * into its raised shade.
+ *
+ * It used to be `themes[type].ritual`, a pale wash sampled from the hi-fi
+ * frames — the reason the ritual read as washed out next to the reveal and
+ * the naming screen, which already sat on the surface colour and were the two
+ * screens that felt alive. Both colours are the type's existing tokens; the
+ * only change is that the ritual now uses them. Everything drawn directly on
+ * this ground is forest/600 or darker, which clears 5:1 on all three types.
+ */
+function ritualGround(personality: PersonalityType): [string, string] {
+  const theme = themes[personality];
+  return [theme.surface, theme.raised];
 }
 
 function GradientScreen({
@@ -2098,7 +2114,7 @@ function GradientScreen({
   const rise = entrance.interpolate({ inputRange: [0, 1], outputRange: [24, 0] });
 
   return (
-    <LinearGradient colors={themes[personality].ritual} style={styles.flex}>
+    <LinearGradient colors={ritualGround(personality)} style={styles.flex}>
       {/*
         The gradient fills the screen; the padding is on the content inside it,
         so colour reaches the status bar and the home indicator while the back
@@ -2154,7 +2170,11 @@ function PrimaryButton({
       accessibilityRole="button"
       disabled={disabled}
       onPress={onPress}
-      style={({ pressed }) => [styles.primaryButton, disabled && styles.primaryButtonDisabled, pressed && styles.pressed]}
+      style={({ pressed }) => [
+        styles.primaryButton,
+        disabled && styles.primaryButtonDisabled,
+        pressed && !disabled && styles.primaryPressed
+      ]}
     >
       <Text style={styles.primaryButtonText}>{label}</Text>
       <Icon name="arrow-forward" size={17} color="#FFFFFF" />
@@ -2172,7 +2192,7 @@ function SecondaryButton({
   icon?: IconName;
 }) {
   return (
-    <Pressable accessibilityRole="button" onPress={onPress} style={({ pressed }) => [styles.secondaryButton, pressed && styles.pressed]}>
+    <Pressable accessibilityRole="button" onPress={onPress} style={({ pressed }) => [styles.secondaryButton, pressed && styles.stampPressed]}>
       {icon ? <Icon name={icon} size={17} color={color.forest[500]} /> : null}
       <Text style={styles.secondaryButtonText}>{label}</Text>
     </Pressable>
@@ -2257,9 +2277,10 @@ const styles = StyleSheet.create({
     width: target.min,
     height: target.min,
     borderRadius: target.min / 2,
-    borderWidth: 1,
-    borderColor: "rgba(123,113,96,0.18)",
-    backgroundColor: "rgba(255,255,255,0.72)",
+    borderWidth: 1.5,
+    borderColor: ink.line,
+    backgroundColor: color.paper.card,
+    ...stamp(ink.edge, 2),
     alignItems: "center",
     justifyContent: "center"
   },
@@ -2270,21 +2291,18 @@ const styles = StyleSheet.create({
   homeCard: {
     minHeight: 104,
     borderRadius: radius.card,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.55)",
-    backgroundColor: "rgba(255,253,248,0.92)",
+    borderWidth: 1.5,
+    borderColor: ink.line,
+    // opaque, so the card reads as an object on the landscape rather than a frost over it
+    backgroundColor: color.paper.card,
     paddingHorizontal: space.gutter,
     paddingVertical: space.md,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    ...Platform.select({
-      ios: { shadowColor: "#1C3C1C", shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.1, shadowRadius: 18 },
-      android: { elevation: 4 },
-      default: { boxShadow: "0 8px 24px rgba(28,60,28,0.10)" }
-    })
+    ...stamp(ink.edge, 5)
   },
-  homeCardCompleted: { backgroundColor: "rgba(28,60,28,0.92)" },
+  homeCardCompleted: { backgroundColor: color.forest[600], borderColor: color.forest[700], ...stamp(color.forest[700], 5) },
   homeCardCopy: { flex: 1, paddingRight: space.sm },
   homeCardTitle: { ...text.heading, color: color.forest[700] },
   homeCardBody: { ...text.label, fontFamily: font.sans, color: color.stone[500], marginTop: 7 },
@@ -2336,14 +2354,15 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: space.sm,
     borderRadius: radius.group,
-    borderWidth: 1,
-    borderColor: color.paper[300],
+    borderWidth: 1.5,
+    borderColor: ink.line,
     backgroundColor: color.paper.card,
+    ...stamp(ink.edge, 3),
     paddingHorizontal: space.md + 2,
     paddingVertical: space.md,
     minHeight: target.min
   },
-  optionSelected: { borderWidth: 2, borderColor: color.forest[500], backgroundColor: color.forest[50] },
+  optionSelected: { borderWidth: 2, borderColor: color.forest[500], backgroundColor: color.forest[50], ...stamp(color.forest[600], 3) },
   optionText: { ...text.bodyLg, flex: 1, fontSize: 16, lineHeight: 24, color: color.stone[700] },
   optionMark: {
     width: 22,
@@ -2368,9 +2387,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: space.md,
     height: target.min,
     borderRadius: radius.pill,
-    borderWidth: 1,
-    borderColor: color.paper[300],
-    backgroundColor: color.paper.card
+    borderWidth: 1.5,
+    borderColor: ink.line,
+    backgroundColor: color.paper.card,
+    ...stamp(ink.edge, 3)
   },
   shuffleText: { ...text.label, fontFamily: font.sansMedium, color: color.forest[500] },
   namingSeedWrap: { alignSelf: "center", marginBottom: space.lg },
@@ -2383,7 +2403,9 @@ const styles = StyleSheet.create({
     backgroundColor: color.paper.card,
     borderRadius: radius.card,
     paddingHorizontal: space.md,
-    ...elevation.lifted
+    borderWidth: 1.5,
+    borderColor: ink.line,
+    ...stamp(ink.edge, 4)
   },
   /* the name is written in the hand, like everything else the user authors */
   namingInput: { ...text.journal, fontSize: 26, lineHeight: 40, color: color.stone[900], height: 68, padding: 0 },
@@ -2420,7 +2442,8 @@ const styles = StyleSheet.create({
      is something to reach and no further. */
   worryScroll: { paddingHorizontal: space.gutter, paddingTop: space.md, paddingBottom: space.lg },
   flowHeading: { marginTop: space.lg },
-  eyebrow: { ...text.eyebrow, color: color.forest[500] },
+  // forest/600, not 500: 500 fell to 3.7:1 on the planner surface
+  eyebrow: { ...text.eyebrow, color: color.forest[600] },
   flowTitle: { ...text.title, color: color.forest[600], marginTop: space.xs },
   /* the slip: no top radius and no border — a torn edge is the top boundary */
   slip: {
@@ -2491,19 +2514,26 @@ const styles = StyleSheet.create({
     height: target.control,
     borderRadius: radius.pill,
     backgroundColor: color.forest[500],
+    ...stamp(color.forest[700], 4),
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: space.xs
   },
-  primaryButtonDisabled: { backgroundColor: "rgba(44,82,40,0.28)" },
+  // a disabled button has nothing to press into, so it loses its edge too
+  primaryButtonDisabled: { backgroundColor: "rgba(44,82,40,0.28)", ...stamp("transparent", 0) },
+  // the face drops onto its edge rather than fading — pressing is physical
+  primaryPressed: { transform: [{ translateY: 3 }], ...stamp(color.forest[700], 1) },
+  stampPressed: { transform: [{ translateY: 2 }], ...stamp(ink.edge, 1) },
   primaryButtonText: { ...text.label, fontSize: 15, lineHeight: 20, color: "#FFFFFF" },
   secondaryButton: {
     width: "100%",
     height: target.control,
     borderRadius: radius.pill,
-    borderWidth: 1,
-    borderColor: "rgba(44,82,40,0.24)",
+    borderWidth: 1.5,
+    borderColor: ink.line,
+    backgroundColor: color.paper.card,
+    ...stamp(ink.edge, 3),
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
@@ -2534,7 +2564,7 @@ const styles = StyleSheet.create({
   progressFill: { height: 3, backgroundColor: color.forest[500] },
 
   // action
-  actionCard: { borderRadius: radius.card, backgroundColor: color.paper.card, padding: space.lg, marginTop: space.lg, ...elevation.lifted },
+  actionCard: { borderRadius: radius.card, backgroundColor: color.paper.card, padding: space.lg, marginTop: space.lg, borderWidth: 1.5, borderColor: ink.line, ...stamp(ink.edge, 5) },
   actionTag: { flexDirection: "row", alignItems: "center", gap: 6 },
   actionTagText: { ...text.eyebrow, color: color.stone[500] },
   actionCopy: { ...text.bodyLg, color: color.stone[700], marginTop: space.md },
@@ -2543,7 +2573,7 @@ const styles = StyleSheet.create({
   // reflection
   reflectionScroll: { paddingTop: space.lg, paddingBottom: space.lg },
   skipButton: { alignSelf: "center", paddingVertical: space.md, paddingHorizontal: space.sm, minHeight: target.min },
-  skipText: { ...text.label, fontFamily: font.sans, color: color.stone[700], textDecorationLine: "underline" },
+  skipText: { ...text.label, fontFamily: font.sans, color: color.forest[600], textDecorationLine: "underline" },
 
   // growth
   // both layers stand on one ground line, so the plant rises out of the seed
@@ -2590,8 +2620,10 @@ const styles = StyleSheet.create({
     backgroundColor: color.paper.card,
     borderRadius: radius.group,
     padding: space.md,
-    marginBottom: space.md,
-    ...elevation.flat
+    marginBottom: space.md + 3,
+    borderWidth: 1.5,
+    borderColor: ink.line,
+    ...stamp(ink.edge, 3)
   },
   cardMeta: { ...text.caption, color: color.stone[500] },
   tagRow: { flexDirection: "row", flexWrap: "wrap", gap: space.xs, marginTop: space.sm },

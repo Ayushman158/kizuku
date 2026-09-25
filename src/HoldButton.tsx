@@ -4,6 +4,9 @@ import * as Haptics from "expo-haptics";
 import { color, radius, target, text } from "./tokens";
 import { Icon, type IconName } from "./Icon";
 
+/** depth of the stamped edge, matching PrimaryButton */
+const EDGE = 4;
+
 /**
  * Hold to commit.
  *
@@ -100,6 +103,21 @@ export function HoldButton({
       onPressOut={cancel}
       style={{ width: "100%" }}
     >
+      {/*
+        The edge is a layer, not a shadow. The face clips its progress line
+        with overflow: hidden, and on iOS that clips shadows too — so the
+        stamped edge every other button now carries would never render here.
+        A darker pill sits underneath instead, and holding presses the face
+        down into it: the same physical press as the other buttons, and a
+        truer one for a control you keep your thumb on.
+      */}
+      <View
+        style={{
+          borderRadius: radius.pill,
+          backgroundColor: disabled ? "transparent" : color.forest[700],
+          paddingBottom: EDGE
+        }}
+      >
       <Animated.View
         style={{
           height: target.control,
@@ -107,7 +125,7 @@ export function HoldButton({
           backgroundColor: disabled ? "rgba(44,82,40,0.28)" : color.forest[500],
           overflow: "hidden",
           justifyContent: "center",
-          transform: [{ scale: press.interpolate({ inputRange: [0, 1], outputRange: [1, 0.98] }) }]
+          transform: [{ translateY: press.interpolate({ inputRange: [0, 1], outputRange: [0, EDGE - 1] }) }]
         }}
       >
         {/*
@@ -138,6 +156,7 @@ export function HoldButton({
           <Icon name={held ? "circle" : "arrow-forward"} size={17} color="#FFFFFF" />
         </View>
       </Animated.View>
+      </View>
     </Pressable>
   );
 }
