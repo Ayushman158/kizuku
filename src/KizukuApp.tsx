@@ -1545,6 +1545,13 @@ function QuizOptionCard({
         ]}
       >
         <Text style={[styles.optionText, active && styles.optionTextSelected]}>{text}</Text>
+        {/* a chosen answer should be readable at a glance, not inferred from a
+            slightly different background — Finch marks its selection outright */}
+        {active ? (
+          <View style={styles.optionMark}>
+            <Icon name="checkmark" size={13} color="#FFFFFF" />
+          </View>
+        ) : null}
       </Animated.View>
     </Pressable>
   );
@@ -1922,6 +1929,25 @@ function Slip({
  * Skippable, and skipping is not a lesser path — some people will not want to
  * name it, and being nagged on day one is the opposite of what this app is for.
  */
+/**
+ * Names to offer. A blank field with "give it a name" is a small blank-page
+ * problem at the exact moment the app wants the user to feel ownership; Finch
+ * pre-fills a name and puts a shuffle beside it, so the zero-effort path still
+ * ends with something that feels chosen. These are what you would plausibly
+ * call a tree — trees, mostly, and the kind of word that survives being said
+ * out loud every day.
+ */
+const PLANT_NAMES = [
+  "Juniper", "Rowan", "Fern", "Ash", "Willow", "Cedar", "Sage", "Hazel",
+  "Linden", "Moss", "Bracken", "Alder", "Briar", "Clover", "Laurel", "Reed",
+  "Thistle", "Yarrow", "Birch", "Elm", "Sorrel", "Tansy"
+];
+
+function suggestName(avoid?: string): string {
+  const pool = avoid ? PLANT_NAMES.filter((n) => n !== avoid) : PLANT_NAMES;
+  return pool[Math.floor(Math.random() * pool.length)]!;
+}
+
 function NamingScreen({
   personality,
   onDone
@@ -1930,7 +1956,8 @@ function NamingScreen({
   onDone: (name: string) => void;
 }) {
   const insets = useSafeAreaInsets();
-  const [name, setName] = useState("");
+  // seeded once, not on every render, so it does not change under the user
+  const [name, setName] = useState(suggestName);
   const theme = themes[personality];
   const type = personalityTypes[personality];
   const reduceMotion = useReduceMotionPreference();
@@ -2017,10 +2044,25 @@ function NamingScreen({
         </View>
 
         <View style={styles.namingActions}>
-          <PrimaryButton
-            label={name.trim() ? `plant ${name.trim()}` : "plant it"}
-            onPress={() => onDone(name.trim())}
-          />
+          <View style={styles.namingButtons}>
+            <Pressable
+              accessibilityLabel="Suggest another name"
+              accessibilityRole="button"
+              onPress={() => setName((current) => suggestName(current))}
+              style={({ pressed }) => [styles.shuffleButton, pressed && styles.pressed]}
+            >
+              <Icon name="refresh" size={17} color={color.forest[500]} />
+              <Text style={styles.shuffleText}>shuffle</Text>
+            </Pressable>
+
+            <View style={styles.namingPrimary}>
+              <PrimaryButton
+                label={name.trim() ? `plant ${name.trim()}` : "plant it"}
+                onPress={() => onDone(name.trim())}
+              />
+            </View>
+          </View>
+
           <Pressable onPress={() => onDone("")} style={styles.namingSkip}>
             <Text style={[styles.namingSkipText, { color: theme.ink }]}>i will name it later</Text>
           </Pressable>
@@ -2290,6 +2332,9 @@ const styles = StyleSheet.create({
   progressDotActive: { backgroundColor: color.forest[500] },
   optionList: { gap: space.sm, marginTop: space.lg },
   option: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: space.sm,
     borderRadius: radius.group,
     borderWidth: 1,
     borderColor: color.paper[300],
@@ -2299,13 +2344,35 @@ const styles = StyleSheet.create({
     minHeight: target.min
   },
   optionSelected: { borderWidth: 2, borderColor: color.forest[500], backgroundColor: color.forest[50] },
-  optionText: { ...text.bodyLg, fontSize: 16, lineHeight: 24, color: color.stone[700] },
+  optionText: { ...text.bodyLg, flex: 1, fontSize: 16, lineHeight: 24, color: color.stone[700] },
+  optionMark: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: color.forest[500],
+    alignItems: "center",
+    justifyContent: "center"
+  },
   optionTextSelected: { color: color.forest[600] },
 
   // type reveal
   revealContent: { paddingHorizontal: space.lg, paddingTop: space.xxl, paddingBottom: 108 },
   namingContent: { paddingHorizontal: space.gutter, paddingTop: space.xxxl, paddingBottom: space.xl, alignItems: "flex-start" },
   namingActions: { alignSelf: "stretch", marginTop: space.xxl },
+  namingButtons: { flexDirection: "row", alignItems: "center", gap: space.sm },
+  namingPrimary: { flex: 1 },
+  shuffleButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: space.md,
+    height: target.min,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    borderColor: color.paper[300],
+    backgroundColor: color.paper.card
+  },
+  shuffleText: { ...text.label, fontFamily: font.sansMedium, color: color.forest[500] },
   namingSeedWrap: { alignSelf: "center", marginBottom: space.lg },
   namingSeed: { width: 116, height: 132 },
   namingTitle: { ...text.displayLg, marginTop: space.xxs },
