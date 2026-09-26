@@ -67,7 +67,7 @@ type Screen =
 type MainTab = "home" | "patterns" | "profile";
 
 const assets = {
-  background: require("../assets/garden-background.png")
+  background: require("../assets/garden-background.jpg")
 };
 
 /**
@@ -146,6 +146,12 @@ function useReduceMotionPreference() {
   return reduceMotion;
 }
 
+/**
+ * Set only when the portfolio builds the web demo (EXPO_PUBLIC_KIZUKU_DEMO=1).
+ * Expo inlines it at build time, so every other build carries a plain false.
+ */
+const DEMO = process.env.EXPO_PUBLIC_KIZUKU_DEMO === "1";
+
 export function KizukuApp() {
   const [screen, setScreen] = useState<Screen>("welcome");
   const [personality, setPersonality] = useState<PersonalityType>("optimizer");
@@ -193,7 +199,7 @@ export function KizukuApp() {
    * during render. Gate on the platform, and read location defensively.
    */
   const devQuery =
-    __DEV__ && Platform.OS === "web" ? (globalThis.location?.search ?? "") : "";
+    (__DEV__ || DEMO) && Platform.OS === "web" ? (globalThis.location?.search ?? "") : "";
   const devJump = devQuery.length > 0;
 
   /*
@@ -267,9 +273,11 @@ export function KizukuApp() {
   }, [hydrated, devJump, onboarded, personality, actionsDone, entries, lastCompletedOn, plantName]);
 
   /**
-   * Dev-only: jump straight to a screen. Used for capturing the real UI and
-   * for reaching a state by hand without walking the whole loop. __DEV__ is
-   * false in release builds, so this cannot ship.
+   * Jump straight to a screen. Used for capturing the real UI, for reaching a
+   * state by hand without walking the whole loop — and by the portfolio, whose
+   * "skip ahead" controls use it so a reviewer can reach day thirty in a
+   * click. Only in development, or in the portfolio's web build (DEMO); a
+   * native release has neither, so it cannot ship to a phone.
    */
   useEffect(() => {
     if (!devJump) return;
@@ -284,6 +292,8 @@ export function KizukuApp() {
       setWorry("i keep worrying that i will not finish this in time.");
       setReflection("i did it, and it was smaller than i feared.");
     }
+    const tree = q.get("name");
+    if (tree) setPlantName(tree.slice(0, 24));
     if (target) setScreen(target);
     // devQuery and devJump are constant for the life of the screen
     // eslint-disable-next-line react-hooks/exhaustive-deps

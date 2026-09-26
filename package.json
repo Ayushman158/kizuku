@@ -8,7 +8,8 @@
     "ios": "expo start --ios",
     "android": "expo start --android",
     "web": "expo start --web",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "build:portfolio": "KIZUKU_WEB_BASE=/kizuku/live EXPO_PUBLIC_KIZUKU_DEMO=1 expo export --platform web --output-dir dist-web && rm -rf ../portfolio/public/kizuku/live && cp -R dist-web ../portfolio/public/kizuku/live"
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "2.2.0",

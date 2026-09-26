@@ -12,3 +12,4 @@ android/
 
 # static web export
 dist/
+dist-web/
