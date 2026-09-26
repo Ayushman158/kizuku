@@ -630,11 +630,14 @@ function HomeScreen({
                 : "share a worry and get your action"}
             </Text>
           </View>
-          <Icon
-            name={todayCompleted ? "checkmark" : "arrow-forward"}
-            size={25}
-            color={todayCompleted ? "#F2F5E9" : color.stone[500]}
-          />
+          <View style={[styles.cardBadge, todayCompleted && styles.cardBadgeDone]}>
+            <Icon
+              name={todayCompleted ? "checkmark" : "arrow-forward"}
+              size={20}
+              weight={2.2}
+              color={todayCompleted ? color.forest[600] : "#FFFFFF"}
+            />
+          </View>
         </Pressable>
       </Animated.View>
 
@@ -870,7 +873,7 @@ function ActionScreen({
           ]}
         >
           <View style={styles.actionTag}>
-            <Icon name="sparkles" size={13} color={color.stone[500]} />
+            <Icon name="sparkles" size={15} weight={1.8} fill={pigment.amber} color={color.forest[600]} />
             <Text style={styles.actionTagText}>{action.tag}</Text>
           </View>
           <Text style={styles.actionCopy}>{action.text}</Text>
@@ -1444,7 +1447,7 @@ function ProfileScreen({
           {rows.map((row, index) => (
             <View key={row.label} style={[styles.settingsRow, index < rows.length - 1 && styles.settingsRowBorder]}>
               <View style={styles.settingsLabel}>
-                <Icon name={row.icon} size={17} color={color.stone[500]} />
+                <Icon name={row.icon} size={19} weight={1.9} fill={pigment.sage} color={color.forest[600]} />
                 <Text style={styles.settingsLabelText}>{row.label}</Text>
               </View>
               <View style={styles.settingsValue}>
@@ -1952,8 +1955,10 @@ function Slip({
         >
           <Icon
             name={listening ? "circle" : "mic"}
-            size={17}
-            color={listening ? "#FFFFFF" : color.stone[700]}
+            size={19}
+            weight={2}
+            fill={listening ? undefined : pigment.sky}
+            color={listening ? "#FFFFFF" : color.forest[600]}
           />
         </Pressable>
       </View>
@@ -2094,7 +2099,7 @@ function NamingScreen({
               onPress={() => setName((current) => suggestName(current))}
               style={({ pressed }) => [styles.shuffleButton, pressed && styles.stampPressed]}
             >
-              <Icon name="refresh" size={17} color={color.forest[500]} />
+              <Icon name="refresh" size={17} weight={2.1} color={color.forest[600]} />
               <Text style={styles.shuffleText}>shuffle</Text>
             </Pressable>
 
@@ -2224,7 +2229,7 @@ function IconButton({
 }) {
   return (
     <Pressable accessibilityLabel={label} accessibilityRole="button" onPress={onPress} style={({ pressed }) => [styles.iconButton, pressed && styles.pressed]}>
-      <Icon name={icon} size={18} color={color.stone[700]} />
+      <Icon name={icon} size={20} weight={2} color={color.forest[600]} fill={icon === "person" ? pigment.sky : undefined} />
     </Pressable>
   );
 }
@@ -2272,12 +2277,24 @@ function SecondaryButton({
   );
 }
 
+/**
+ * Fills for sticker icons: the three type pigments, straight from the themes.
+ * Each tab keeps one, so the bar reads as three coloured objects rather than
+ * three grey outlines, and the colours are the ones the rest of the app
+ * already teaches.
+ */
+const pigment = {
+  sage: themes.planner.surface,
+  amber: themes.optimizer.surface,
+  sky: themes.seeker.surface
+} as const;
+
 function BottomNav({ active, onSelect }: { active: MainTab; onSelect: (tab: MainTab) => void }) {
   const insets = useSafeAreaInsets();
-  const items: Array<{ id: MainTab; label: string; icon: IconName }> = [
-    { id: "home", label: "garden", icon: "home" },
-    { id: "patterns", label: "pattern", icon: "stats" },
-    { id: "profile", label: "you", icon: "person" }
+  const items: Array<{ id: MainTab; label: string; icon: IconName; fill: string }> = [
+    { id: "home", label: "garden", icon: "home", fill: pigment.sage },
+    { id: "patterns", label: "pattern", icon: "stats", fill: pigment.amber },
+    { id: "profile", label: "you", icon: "person", fill: pigment.sky }
   ];
 
   return (
@@ -2302,9 +2319,9 @@ function BottomNav({ active, onSelect }: { active: MainTab; onSelect: (tab: Main
             accessibilityRole="button"
             key={item.id}
             onPress={() => onSelect(item.id)}
-            style={styles.navItem}
+            style={[styles.navItem, selected && styles.navItemActive]}
           >
-            <Icon name={item.icon} size={20} color={selected ? color.forest[500] : color.stone[400]} />
+            <Icon name={item.icon} size={26} weight={2} fill={item.fill} color={color.forest[600]} />
             <Text style={[styles.navLabel, selected && styles.navLabelActive]}>{item.label}</Text>
           </Pressable>
         );
@@ -2361,6 +2378,16 @@ const styles = StyleSheet.create({
   // the can rests slightly forward of the soil line, as it did before
   heroWateringCan: { position: "absolute", bottom: GROUND_ABOVE_FLOOR - 17, right: 0, width: 154, height: 162, zIndex: 2 },
   homeCardMotion: { position: "absolute", left: space.gutter, right: space.gutter, bottom: 146 },
+  cardBadge: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: color.forest[500],
+    alignItems: "center",
+    justifyContent: "center",
+    ...stamp(color.forest[700], 3)
+  },
+  cardBadgeDone: { backgroundColor: color.forest[50], ...stamp(color.forest[700], 3) },
   homeCard: {
     minHeight: 104,
     borderRadius: radius.card,
@@ -2773,10 +2800,15 @@ const styles = StyleSheet.create({
     minHeight: target.navItem.height,
     alignItems: "center",
     justifyContent: "center",
-    gap: space.xxs
+    gap: space.xxs,
+    borderRadius: radius.group,
+    borderWidth: 1.5,
+    borderColor: "transparent"
   },
+  // the Finch move: the chosen tab sits in a tinted, outlined pill
+  navItemActive: { backgroundColor: color.forest[50], borderColor: ink.line },
   navLabel: { fontFamily: font.sansMedium, fontSize: 11, lineHeight: 15, letterSpacing: 0.3, color: color.stone[500] },
-  navLabelActive: { fontFamily: font.sansSemibold, color: color.forest[500] }
+  navLabelActive: { fontFamily: font.sansSemibold, color: color.forest[600] }
 });
 
 /** Frames sized to each plant's own proportions, all sharing the horizon at 565. */
