@@ -24,7 +24,8 @@ export type IconName =
   | "home"
   | "stats"
   | "person"
-  | "refresh";
+  | "refresh"
+  | "plant";
 
 /**
  * `fill` turns an icon into a sticker: the closed shapes take a solid colour
@@ -125,6 +126,16 @@ export function Icon({
         <>
           <Circle cx={12} cy={8} r={4} {...body} />
           <Path d={fill ? "M4 21c0-4 3.6-6 8-6s8 2 8 6z" : "M4 21c0-4 3.6-6 8-6s8 2 8 6"} {...body} />
+        </>
+      ) : null}
+
+      {name === "plant" ? (
+        <>
+          {/* two leaves, then the pot drawn over their stems */}
+          <Path d="M12 12.5C12 8.2 9.4 5.6 5.2 5.4c0 3.9 2.6 7.1 6.8 7.1z" {...body} />
+          <Path d="M12 12.5c0-4.6 2.9-7.6 6.9-7.7 0 4.3-2.9 7.7-6.9 7.7z" {...body} />
+          <Path d="M5 12.5h14" {...stroke} />
+          <Path d="M6.3 12.5h11.4l-1.5 7.4a1.4 1.4 0 0 1-1.4 1.1H9.2a1.4 1.4 0 0 1-1.4-1.1z" {...body} />
         </>
       ) : null}
 

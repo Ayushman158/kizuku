@@ -49,6 +49,9 @@ export type StoredState = {
   /** what the user called their tree. Optional: installs from before naming
       existed are still valid and simply have no name yet. */
   plantName?: string;
+  /** the real plant chosen at thirty, once it has been claimed. Optional:
+      unset until then, and absent from every save made before it existed. */
+  realPlant?: string;
   /** "YYYY-MM-DD" in local time, or null if nothing has been completed */
   lastCompletedOn: string | null;
   onboarded: boolean;
@@ -89,6 +92,7 @@ function isValid(value: unknown): value is StoredState {
     state.entries.every(isEntry) &&
     (state.lastCompletedOn === null || typeof state.lastCompletedOn === "string") &&
     (state.plantName === undefined || typeof state.plantName === "string") &&
+    (state.realPlant === undefined || typeof state.realPlant === "string") &&
     typeof state.onboarded === "boolean"
   );
 }

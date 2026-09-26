@@ -25,6 +25,7 @@ import {
   startersFor,
   personalityTypes,
   quiz,
+  realPlants,
   stageFor,
   stageThresholds,
   typeFrom,
@@ -61,6 +62,7 @@ type Screen =
   | "committing"
   | "reflection"
   | "growth"
+  | "thirty"
   | "patterns"
   | "profile";
 
@@ -98,6 +100,7 @@ const NAV_CONTENT = 82;
 /** ray bursts, sized to overflow the screen edge so they never show a rim */
 const REVEAL_RAYS = 460;
 const GROWTH_RAYS = 600;
+const THIRTY_RAYS = 680;
 
 /**
  * Every type's tree at each of its six stages, straight from the design file.
@@ -171,6 +174,8 @@ export function KizukuApp() {
   const [hydrated, setHydrated] = useState(false);
   const [onboarded, setOnboarded] = useState(false);
   const [plantName, setPlantName] = useState<string>("");
+  // the real plant claimed at thirty; empty until then
+  const [realPlant, setRealPlant] = useState<string>("");
 
   const todayCompleted = lastCompletedOn === todayKey();
 
@@ -221,6 +226,7 @@ export function KizukuApp() {
         setLastCompletedOn(saved.lastCompletedOn);
         setOnboarded(saved.onboarded);
         setPlantName(saved.plantName ?? "");
+        setRealPlant(saved.realPlant ?? "");
         if (saved.onboarded) setScreen("home");
       }
 
@@ -268,9 +274,10 @@ export function KizukuApp() {
       entries,
       lastCompletedOn,
       onboarded,
-      plantName: plantName || undefined
+      plantName: plantName || undefined,
+      realPlant: realPlant || undefined
     });
-  }, [hydrated, devJump, onboarded, personality, actionsDone, entries, lastCompletedOn, plantName]);
+  }, [hydrated, devJump, onboarded, personality, actionsDone, entries, lastCompletedOn, plantName, realPlant]);
 
   /**
    * Jump straight to a screen. Used for capturing the real UI, for reaching a
@@ -370,6 +377,8 @@ export function KizukuApp() {
               actionsDone={actionsDone}
               todayCompleted={todayCompleted}
               plantName={plantName}
+              plantWaiting={stageFor(actionsDone) === 6 && !realPlant}
+              onPlant={() => setScreen("thirty")}
               onStart={() => {
                 setWorry("");
                 setReflection("");
@@ -431,7 +440,22 @@ export function KizukuApp() {
           ) : null}
 
           {screen === "growth" ? (
-            <GrowthScreen personality={personality} actionsDone={actionsDone} plantName={plantName} onDone={() => setScreen("home")} />
+            <GrowthScreen
+              personality={personality}
+              actionsDone={actionsDone}
+              plantName={plantName}
+              nextLabel={stageFor(actionsDone) === 6 && !realPlant ? "see what thirty brings" : undefined}
+              onDone={() => setScreen(stageFor(actionsDone) === 6 && !realPlant ? "thirty" : "home")}
+            />
+          ) : null}
+
+          {screen === "thirty" ? (
+            <ThirtyScreen
+              personality={personality}
+              plantName={plantName}
+              onClaim={setRealPlant}
+              onDone={() => setScreen("home")}
+            />
           ) : null}
 
           {screen === "patterns" ? (
@@ -472,6 +496,7 @@ export function KizukuApp() {
                         setEntries([]);
                         setLastCompletedOn(null);
                         setPlantName("");
+                        setRealPlant("");
                         setScreen("home");
                       }
                     }
@@ -492,6 +517,8 @@ function HomeScreen({
   actionsDone,
   todayCompleted,
   plantName,
+  plantWaiting,
+  onPlant,
   onStart,
   onTab,
   onProfile
@@ -500,6 +527,9 @@ function HomeScreen({
   actionsDone: number;
   todayCompleted: boolean;
   plantName: string;
+  /** the tree is full and no real plant has been claimed yet */
+  plantWaiting: boolean;
+  onPlant: () => void;
   onStart: () => void;
   onTab: (tab: MainTab) => void;
   onProfile: () => void;
@@ -613,6 +643,16 @@ function HomeScreen({
             actionsDone={actionsDone}
             name={plantName || personalityTypes[personality].plant}
           />
+          {plantWaiting ? (
+            <Pressable
+              accessibilityRole="button"
+              onPress={onPlant}
+              style={({ pressed }) => [styles.plantWaiting, pressed && styles.stampPressed]}
+            >
+              <Icon name="plant" size={20} weight={1.8} fill={themes[personality].surface} color={color.forest[600]} />
+              <Text style={styles.plantWaitingText}>your real plant is waiting</Text>
+            </Pressable>
+          ) : null}
         </View>
         <IconButton icon="person" label="Open profile" onPress={onProfile} />
       </View>
@@ -1036,11 +1076,14 @@ function GrowthScreen({
   personality,
   actionsDone,
   plantName,
+  nextLabel = "back to the garden",
   onDone
 }: {
   personality: PersonalityType;
   actionsDone: number;
   plantName: string;
+  /** where the button leads, said plainly — at thirty it is not the garden */
+  nextLabel?: string;
   onDone: () => void;
 }) {
   const insets = useSafeAreaInsets();
@@ -1210,7 +1253,7 @@ function GrowthScreen({
           pointerEvents={grown ? "auto" : "none"}
           style={[styles.growthAction, { bottom: insets.bottom + space.lg, opacity: settleIn }]}
         >
-          <PrimaryButton label="back to the garden" onPress={onDone} />
+          <PrimaryButton label={nextLabel} onPress={onDone} />
         </Animated.View>
       </LinearGradient>
     </View>
@@ -1218,6 +1261,265 @@ function GrowthScreen({
 }
 
 /** how much of the next page stays visible, and the gutter between them */
+/*
+ * ─────────────────────────────────────────────────────────
+ * THIRTY — the brand deck's promise: at thirty, a real plant
+ *
+ *   grown    the tree at full size, in its light; what thirty meant
+ *   choose   four plants, chosen for the way this type grows
+ *   claim    the one thing Kizuku will ever send off the phone
+ *   sent     the card that travels with the plant
+ * ─────────────────────────────────────────────────────────
+ */
+type ThirtyStep = "grown" | "choose" | "claim" | "sent";
+
+function ThirtyScreen({
+  personality,
+  plantName,
+  onClaim,
+  onDone
+}: {
+  personality: PersonalityType;
+  plantName: string;
+  /** remembers which plant was claimed — the only thing from this flow that is kept */
+  onClaim: (plant: string) => void;
+  onDone: () => void;
+}) {
+  const insets = useSafeAreaInsets();
+  const reduceMotion = useReduceMotionPreference();
+  const theme = themes[personality];
+  const type = personalityTypes[personality];
+  const name = plantName || "your tree";
+  const options = realPlants[personality];
+
+  const [step, setStep] = useState<ThirtyStep>("grown");
+  const [choice, setChoice] = useState<string | null>(null);
+  /*
+   * The address exists only in this component's memory. It is never written
+   * to storage, never sent — this build has no way to send it — and it is
+   * dropped the moment the claim is made or the screen is left.
+   */
+  const [to, setTo] = useState({ name: "", street: "", city: "" });
+  const ready = Boolean(to.name.trim() && to.street.trim() && to.city.trim());
+
+  // the card arrives turned, and settles on the table the way paper does
+  const card = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (step === "grown" && Platform.OS !== "web") {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+    }
+    if (step !== "sent") return;
+    card.setValue(reduceMotion ? 1 : 0);
+    if (!reduceMotion) Animated.spring(card, { toValue: 1, ...motion.growSpring, useNativeDriver: true }).start();
+  }, [card, reduceMotion, step]);
+
+  if (step === "grown") {
+    return (
+      <LinearGradient colors={ritualGround(personality)} style={[styles.flex, styles.center]}>
+        <View style={styles.thirtyStage}>
+          <View style={styles.thirtyRays}>
+            <Rays size={THIRTY_RAYS} reduceMotion={reduceMotion} strength={0.5} />
+          </View>
+          <Image
+            accessibilityIgnoresInvertColors
+            resizeMode="contain"
+            source={plantFor(personality, 6)}
+            style={styles.thirtyTree}
+          />
+          <View style={styles.thirtyBurst}>
+            <Burst
+              play
+              reduceMotion={reduceMotion}
+              count={18}
+              radius={195}
+              ink={color.forest[600]}
+              fills={[color.paper.card, pigment.amber, color.paper.card, theme.raised]}
+            />
+          </View>
+        </View>
+
+        <View style={styles.growthCopy}>
+          <Eyebrow>thirty moments</Eyebrow>
+          <Text style={styles.growthHeadline}>{name} is fully grown.</Text>
+          <Text style={styles.thirtyBody}>
+            thirty times you faced something that had not happened yet, and did one small thing anyway.
+            a tree this size has earned a real one.
+          </Text>
+        </View>
+
+        <View style={[styles.growthAction, { bottom: insets.bottom + space.lg }]}>
+          <PrimaryButton label="see your plant" onPress={() => setStep("choose")} />
+        </View>
+      </LinearGradient>
+    );
+  }
+
+  if (step === "choose") {
+    return (
+      <GradientScreen personality={personality}>
+        <ScrollView
+          contentContainerStyle={[styles.worryScroll, { paddingBottom: insets.bottom + space.xl }]}
+          showsVerticalScrollIndicator={false}
+        >
+          <BackButton onPress={() => setStep("grown")} />
+          <View style={styles.flowHeading}>
+            <Eyebrow>a real one</Eyebrow>
+            <Text style={styles.flowTitle}>choose the plant we send.</Text>
+            <Text style={styles.thirtyLead}>
+              each is picked for the way {type.name} grows. it comes potted, with a card.
+            </Text>
+          </View>
+
+          <View style={styles.optionList}>
+            {options.map((plant) => {
+              const active = choice === plant.name;
+              return (
+                <Pressable
+                  key={plant.name}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: active }}
+                  onPress={() => setChoice(plant.name)}
+                  style={({ pressed }) => [
+                    styles.option,
+                    styles.plantOption,
+                    active && styles.optionSelected,
+                    pressed && styles.stampPressed
+                  ]}
+                >
+                  <Icon name="plant" size={30} weight={1.8} fill={theme.surface} color={color.forest[600]} />
+                  <View style={styles.flex}>
+                    <Text style={styles.plantOptionName}>{plant.name}</Text>
+                    <Text style={styles.plantOptionWhy}>{plant.why}</Text>
+                  </View>
+                  {active ? (
+                    <View style={styles.optionMark}>
+                      <Icon name="checkmark" size={13} color="#FFFFFF" />
+                    </View>
+                  ) : null}
+                </Pressable>
+              );
+            })}
+          </View>
+
+          <View style={styles.inlineAction}>
+            <PrimaryButton
+              label={choice ? `send me the ${choice}` : "choose one"}
+              disabled={!choice}
+              onPress={() => setStep("claim")}
+            />
+            {/* the quiz's decline link is stone grey for parchment; on a type
+                surface that falls to about 3:1, so this takes the ritual's link */}
+            <Pressable onPress={onDone} style={styles.skipButton}>
+              <Text style={styles.skipText}>i will decide later</Text>
+            </Pressable>
+          </View>
+        </ScrollView>
+      </GradientScreen>
+    );
+  }
+
+  if (step === "claim") {
+    return (
+      <GradientScreen personality={personality}>
+        <ScrollView
+          automaticallyAdjustKeyboardInsets
+          contentContainerStyle={[styles.worryScroll, { paddingBottom: insets.bottom + space.xl }]}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <BackButton onPress={() => setStep("choose")} />
+          <View style={styles.flowHeading}>
+            <Eyebrow>one thing to send</Eyebrow>
+            <Text style={styles.flowTitle}>where should the {choice} go?</Text>
+          </View>
+
+          <View style={styles.claimCard}>
+            {(
+              [
+                ["name", "who it is for", "name"],
+                ["street", "street and number", "fullStreetAddress"],
+                ["city", "city and postcode", "addressCityAndState"]
+              ] as const
+            ).map(([key, label, contentType], index) => (
+              <View key={key} style={[styles.claimField, index > 0 && styles.claimFieldRule]}>
+                <Text style={styles.claimLabel}>{label}</Text>
+                <TextInput
+                  accessibilityLabel={label}
+                  autoCapitalize="words"
+                  onChangeText={(value) => setTo((current) => ({ ...current, [key]: value }))}
+                  style={styles.claimInput}
+                  textContentType={contentType}
+                  value={to[key]}
+                />
+              </View>
+            ))}
+          </View>
+
+          {/*
+            The tension, said plainly. Everything else in Kizuku stays on the
+            phone; a plant cannot arrive without an address. So the promise is
+            narrowed, not broken: one thing, once, to one place, kept nowhere.
+          */}
+          <Text style={styles.claimPromise}>
+            this is the only thing kizuku will ever send off your phone. it goes once, to the nursery
+            that grows your plant, and is not kept here.
+          </Text>
+          <Text style={styles.claimPrototype}>
+            this is a prototype: nothing is sent, and the address is gone when you leave this screen.
+          </Text>
+
+          <View style={styles.inlineAction}>
+            <PrimaryButton
+              label={`send my ${choice}`}
+              disabled={!ready}
+              onPress={() => {
+                if (!choice) return;
+                onClaim(choice);
+                setTo({ name: "", street: "", city: "" });
+                setStep("sent");
+              }}
+            />
+          </View>
+        </ScrollView>
+      </GradientScreen>
+    );
+  }
+
+  return (
+    <LinearGradient colors={ritualGround(personality)} style={[styles.flex, styles.center]}>
+      <Animated.View
+        style={[
+          styles.shipCard,
+          {
+            opacity: card.interpolate({ inputRange: [0, 0.4, 1], outputRange: [0, 1, 1] }),
+            transform: [
+              { translateY: card.interpolate({ inputRange: [0, 1], outputRange: [60, 0] }) },
+              { rotate: card.interpolate({ inputRange: [0, 1], outputRange: ["-9deg", "-2deg"] }) }
+            ]
+          }
+        ]}
+      >
+        <Text style={styles.shipCardEyebrow}>with your {choice}</Text>
+        <Text style={styles.shipCardHand}>
+          {name} grew from thirty small things. this one grows the same way: a little, each time you
+          tend it.
+        </Text>
+        <Text style={styles.shipCardSign}>— kizuku</Text>
+      </Animated.View>
+
+      <View style={styles.growthCopy}>
+        <Text style={styles.growthHeadline}>your {choice} is on its way.</Text>
+        <Text style={styles.thirtyBody}>it comes potted, with this card, in three to five days.</Text>
+      </View>
+
+      <View style={[styles.growthAction, { bottom: insets.bottom + space.lg }]}>
+        <PrimaryButton label="back to the garden" onPress={onDone} />
+      </View>
+    </LinearGradient>
+  );
+}
+
 const PEEK = 26;
 const PAGE_GAP = 10;
 
@@ -2831,6 +3133,59 @@ const styles = StyleSheet.create({
   // growth
   // both layers stand on one ground line, so the plant rises out of the seed
   growthStage: { width: 300, height: 360, alignItems: "center", justifyContent: "flex-end" },
+  // thirty
+  thirtyStage: { width: 320, height: 380, alignItems: "center", justifyContent: "flex-end" },
+  thirtyRays: { position: "absolute", left: (320 - THIRTY_RAYS) / 2, top: 200 - THIRTY_RAYS / 2 },
+  thirtyTree: { width: 300, height: 370 },
+  thirtyBurst: { position: "absolute", left: 160, top: 200 },
+  thirtyBody: { ...text.caption, color: color.forest[600], textAlign: "center", maxWidth: 300, marginTop: space.sm },
+  thirtyLead: { ...text.body, color: color.forest[600], marginTop: space.sm },
+  plantOption: { paddingVertical: space.md, gap: space.md },
+  plantOptionName: { ...text.label, fontFamily: font.sansSemibold, fontSize: 17, lineHeight: 22, color: color.forest[600] },
+  plantOptionWhy: { ...text.caption, color: color.stone[700], marginTop: 2 },
+  claimCard: {
+    marginTop: space.lg,
+    borderRadius: radius.group,
+    backgroundColor: color.paper.card,
+    borderWidth: 1.5,
+    borderColor: ink.line,
+    ...stamp(ink.edge, 3)
+  },
+  claimField: { paddingHorizontal: space.md, paddingTop: space.sm, paddingBottom: 2 },
+  claimFieldRule: { borderTopWidth: 1, borderTopColor: color.paper[300] },
+  claimLabel: { ...text.caption, color: color.stone[700] },
+  // what the user writes is set in the hand, like the name and the journal
+  claimInput: { ...text.journal, fontSize: 22, lineHeight: 30, height: 40, padding: 0, color: color.stone[900] },
+  claimPromise: { ...text.body, color: color.forest[600], marginTop: space.lg },
+  claimPrototype: { ...text.caption, fontFamily: font.sansMedium, color: color.forest[600], marginTop: space.sm },
+  shipCard: {
+    width: 300,
+    padding: space.lg,
+    marginBottom: space.xl,
+    borderRadius: radius.card,
+    backgroundColor: color.paper.card,
+    borderWidth: 1.5,
+    borderColor: ink.line,
+    ...stamp(ink.edge, 5)
+  },
+  shipCardEyebrow: { ...text.eyebrow, color: color.stone[700] },
+  shipCardHand: { ...text.journal, fontSize: 24, lineHeight: 32, color: color.forest[600], marginTop: space.sm },
+  shipCardSign: { ...text.journal, fontSize: 22, lineHeight: 28, color: color.forest[500], textAlign: "right", marginTop: space.sm },
+  plantWaiting: {
+    alignSelf: "flex-start",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: space.xs,
+    marginTop: space.sm,
+    paddingHorizontal: space.md,
+    height: 40,
+    borderRadius: radius.pill,
+    backgroundColor: color.paper.card,
+    borderWidth: 1.5,
+    borderColor: ink.line,
+    ...stamp(ink.edge, 3)
+  },
+  plantWaitingText: { ...text.label, fontFamily: font.sansSemibold, color: color.forest[600] },
   // the plant layers rock about their base, as a seed would in the soil
   growthShake: { position: "absolute", left: 0, right: 0, top: 0, bottom: 0, transformOrigin: "center bottom" },
   growthBurst: { position: "absolute", left: 150, top: 190 },

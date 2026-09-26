@@ -222,6 +222,35 @@ export function chooseAction(
 }
 
 /**
+ * The real plant at thirty — the brand deck's promise that the digital
+ * growth becomes something physical. The species per type are the deck's own
+ * lists, each "chosen for psychological alignment, not aesthetics": the
+ * optimiser's are fast and useful, the seeker's strange and meaningful, the
+ * planner's patient and hard to get wrong. The one-line reasons are written
+ * in the app's voice and say why this plant, for this person.
+ */
+export const realPlants = {
+  optimizer: [
+    { name: "pothos", why: "grows fast enough that you can watch it. progress you can measure." },
+    { name: "basil", why: "useful as well as green. you will be cutting from it within a week." },
+    { name: "spider plant", why: "sends out small plants of its own. growth that keeps paying back." },
+    { name: "aloe vera", why: "asks for almost nothing, and is good for a burn." }
+  ],
+  seeker: [
+    { name: "air plant", why: "needs no soil at all. it lives on air and a little attention." },
+    { name: "nerve plant", why: "its veins show you exactly how it is doing, and it forgives you fast." },
+    { name: "moon cactus", why: "two plants grafted into one. a small strange thing that means something." },
+    { name: "string of pearls", why: "grows slowly, one bead at a time, each its own small decision." }
+  ],
+  planner: [
+    { name: "bonsai", why: "rewards years of patience. nothing about it can be rushed." },
+    { name: "zz plant", why: "almost impossible to get wrong. you can stop preparing." },
+    { name: "jade plant", why: "lives for decades, and only grows as fast as it is sure." },
+    { name: "snake plant", why: "does best when it is left alone, which is its own kind of trust." }
+  ]
+} as const satisfies Record<PersonalityType, ReadonlyArray<{ name: string; why: string }>>;
+
+/**
  * Places to start, for someone who opens the worry screen and cannot name it.
  *
  * Finch puts suggestions under its goal box so an empty field is never the
