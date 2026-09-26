@@ -41,6 +41,8 @@ import { Watering } from "./Watering";
 import { SafeAreaProvider, useSafeAreaInsets } from "react-native-safe-area-context";
 import { HoldButton } from "./HoldButton";
 import { Rays } from "./Rays";
+import { Burst } from "./Burst";
+import * as Haptics from "expo-haptics";
 import { GrowthSequence, preloadGrowthFrames } from "./GrowthSequence";
 import Svg, { Circle, G, Path } from "react-native-svg";
 import KizukuMark from "../assets/kizuku-mark.svg";
@@ -419,7 +421,7 @@ export function KizukuApp() {
           ) : null}
 
           {screen === "growth" ? (
-            <GrowthScreen personality={personality} actionsDone={actionsDone} onDone={() => setScreen("home")} />
+            <GrowthScreen personality={personality} actionsDone={actionsDone} plantName={plantName} onDone={() => setScreen("home")} />
           ) : null}
 
           {screen === "patterns" ? (
@@ -1007,15 +1009,33 @@ function ReflectionScreen({
   );
 }
 
+/*
+ * ─────────────────────────────────────────────────────────
+ * GROWTH — shaped on Finch's hatch: anticipation, burst, bird
+ *
+ *     0ms   "planting…" — the seed sits
+ *   250ms   the seed shakes, like an egg about to crack
+ *   900ms   BURST: haptic, sparkles thrown outward, light
+ *           opens behind, the plant rises on its spring
+ *  1060ms   the headline, the stage, and the way out arrive
+ * ─────────────────────────────────────────────────────────
+ */
+const GROWTH = { shakeAt: 250, burstAt: 900 };
+
 function GrowthScreen({
   personality,
   actionsDone,
+  plantName,
   onDone
 }: {
   personality: PersonalityType;
   actionsDone: number;
+  plantName: string;
   onDone: () => void;
 }) {
+  const insets = useSafeAreaInsets();
+  const theme = themes[personality];
+  const name = plantName || "your tree";
   const reduceMotion = useReduceMotionPreference();
   const previous = stageFor(actionsDone - 1);
   const current = stageFor(actionsDone);
@@ -1024,10 +1044,27 @@ function GrowthScreen({
   const [grown, setGrown] = useState(false);
   const rise = useRef(new Animated.Value(0)).current;
   const settleIn = useRef(new Animated.Value(0)).current;
+  const shake = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
+    // anticipation: a few small rocks either side of upright, easing out
+    const rock = (to: number, ms: number) =>
+      Animated.timing(shake, { toValue: to, duration: ms, easing: Easing.inOut(Easing.quad), useNativeDriver: true });
+    const shaking = Animated.sequence([
+      Animated.delay(GROWTH.shakeAt),
+      rock(-1, 80), rock(1, 110), rock(-0.8, 100), rock(0.8, 100), rock(-0.4, 90), rock(0, 90)
+    ]);
+    if (!reduceMotion) shaking.start();
+
     const timer = setTimeout(() => {
       setGrown(true);
+      if (Platform.OS !== "web") {
+        // a new stage is an event; the same stage is a nod
+        (transforms
+          ? Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
+          : Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+        ).catch(() => {});
+      }
 
       if (reduceMotion) {
         rise.setValue(1);
@@ -1046,22 +1083,41 @@ function GrowthScreen({
           useNativeDriver: true
         })
       ]).start();
-    }, 900);
+    }, GROWTH.burstAt);
 
-    return () => clearTimeout(timer);
-  }, [reduceMotion, rise, settleIn]);
+    return () => {
+      clearTimeout(timer);
+      shaking.stop();
+    };
+  }, [reduceMotion, rise, settleIn, shake, transforms]);
+
+  // ±4° read as a tremor; ±7° reads as something about to crack
+  const shakeRotate = shake.interpolate({ inputRange: [-1, 1], outputRange: ["-7deg", "7deg"] });
+  // it squashes a little at each extreme, as a shell does before it gives
+  const shakeSquash = shake.interpolate({ inputRange: [-1, 0, 1], outputRange: [0.96, 1, 0.96] });
 
   // when the stage has not changed there is nothing to transform into, so the
   // plant acknowledges instead of pretending — the count is what grew
   const acknowledge = rise.interpolate({ inputRange: [0, 0.45, 1], outputRange: [1, 1.045, 1] });
 
   return (
-    <Pressable accessibilityRole="button" onPress={grown ? onDone : undefined} style={styles.flex}>
+    <View style={styles.flex}>
       <LinearGradient colors={ritualGround(personality)} style={[styles.flex, styles.center]}>
         <View style={styles.growthStage}>
-          <Animated.View style={[styles.growthRays, { opacity: settleIn }]}>
-            <Rays size={GROWTH_RAYS} reduceMotion={reduceMotion} strength={0.4} />
+          {/* the light opens rather than fading in: it grows from behind the plant */}
+          <Animated.View
+            style={[
+              styles.growthRays,
+              {
+                opacity: settleIn,
+                transform: [{ scale: settleIn.interpolate({ inputRange: [0, 1], outputRange: [0.55, 1] }) }]
+              }
+            ]}
+          >
+            <Rays size={GROWTH_RAYS} reduceMotion={reduceMotion} strength={transforms ? 0.46 : 0.32} />
           </Animated.View>
+
+          <Animated.View style={[styles.growthShake, { transform: [{ rotate: shakeRotate }, { scaleY: shakeSquash }] }]}>
           {/* the optimiser's opening is drawn frame by frame; the other two
               types have no clip, so they use the spring rise */}
           {transforms && personality === "optimizer" ? (
@@ -1100,28 +1156,54 @@ function GrowthScreen({
             ]}
           />
           )}
+          </Animated.View>
+
+          {/* thrown from the middle of the plant */}
+          <View style={styles.growthBurst}>
+            <Burst
+              play={grown}
+              reduceMotion={reduceMotion}
+              count={transforms ? 14 : 8}
+              radius={transforms ? 165 : 120}
+              ink={color.forest[600]}
+              fills={[color.paper.card, pigment.amber, color.paper.card, theme.raised]}
+            />
+          </View>
         </View>
 
         <Animated.View
-          style={{
-            opacity: settleIn,
-            transform: [{ translateY: settleIn.interpolate({ inputRange: [0, 1], outputRange: [10, 0] }) }]
-          }}
+          style={[
+            styles.growthCopy,
+            {
+              opacity: settleIn,
+              transform: [{ translateY: settleIn.interpolate({ inputRange: [0, 1], outputRange: [14, 0] }) }]
+            }
+          ]}
         >
           {grown ? (
             <>
-              <Text style={styles.growthTitle}>something grew.</Text>
+              <Text style={styles.growthHeadline}>{transforms ? `${name} grew.` : `${name} is growing.`}</Text>
+              <View style={styles.growthMeter}>
+                <StageMeter actionsDone={actionsDone} />
+              </View>
               <Text style={styles.growthBody}>
                 your garden now holds {actionsDone} {actionsDone === 1 ? "moment" : "moments"} of showing up.
-                tap anywhere to continue.
               </Text>
             </>
           ) : null}
         </Animated.View>
 
         {grown ? null : <Text style={styles.growthTitle}>planting…</Text>}
+
+        {/* a way out you can see, where "tap anywhere" was an instruction */}
+        <Animated.View
+          pointerEvents={grown ? "auto" : "none"}
+          style={[styles.growthAction, { bottom: insets.bottom + space.lg, opacity: settleIn }]}
+        >
+          <PrimaryButton label="back to the garden" onPress={onDone} />
+        </Animated.View>
       </LinearGradient>
-    </Pressable>
+    </View>
   );
 }
 
@@ -2216,15 +2298,15 @@ function BackButton({ onPress }: { onPress: () => void }) {
  * "no calendar, no streak" is the brand's own rule — a thin segment is a
  * record of what you have done, not a reminder of what you owe.
  */
-function StageMeter({ actionsDone, name }: { actionsDone: number; name: string }) {
+function StageMeter({ actionsDone, name }: { actionsDone: number; name?: string }) {
   const stage = stageFor(actionsDone);
   const from = stageThresholds[stage - 1]!;
   const to = (stageThresholds as readonly number[])[stage];
   const within = to === undefined ? 1 : Math.min(1, Math.max(0, (actionsDone - from) / (to - from)));
 
   return (
-    <View style={styles.meter} accessible accessibilityLabel={`${name}, stage ${stage} of 6`}>
-      <Text numberOfLines={1} style={styles.meterName}>{name}</Text>
+    <View style={styles.meter} accessible accessibilityLabel={`${name ? `${name}, ` : ""}stage ${stage} of 6`}>
+      {name ? <Text numberOfLines={1} style={styles.meterName}>{name}</Text> : null}
       <View style={styles.meterRow}>
         <View style={styles.meterTrack}>
           {stageThresholds.map((_, index) => {
@@ -2739,6 +2821,13 @@ const styles = StyleSheet.create({
   // growth
   // both layers stand on one ground line, so the plant rises out of the seed
   growthStage: { width: 300, height: 360, alignItems: "center", justifyContent: "flex-end" },
+  // the plant layers rock about their base, as a seed would in the soil
+  growthShake: { position: "absolute", left: 0, right: 0, top: 0, bottom: 0, transformOrigin: "center bottom" },
+  growthBurst: { position: "absolute", left: 150, top: 190 },
+  growthCopy: { alignItems: "center", paddingHorizontal: space.gutter },
+  growthHeadline: { fontFamily: font.serif, fontSize: 34, lineHeight: 40, color: color.forest[600], textAlign: "center", marginTop: space.md },
+  growthMeter: { marginTop: space.sm },
+  growthAction: { position: "absolute", left: space.gutter, right: space.gutter },
   // centred on the plant's middle, not the stage's, so the light is behind it
   growthRays: { position: "absolute", left: (300 - GROWTH_RAYS) / 2, top: 190 - GROWTH_RAYS / 2 },
   growthPlantLayer: { position: "absolute", bottom: 0, width: 290, height: 356, transformOrigin: "center bottom" },
