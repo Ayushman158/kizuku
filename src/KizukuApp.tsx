@@ -26,6 +26,7 @@ import {
   personalityTypes,
   quiz,
   stageFor,
+  stageThresholds,
   typeFrom,
   type GrowthStage,
   type PersonalityType
@@ -39,6 +40,7 @@ import { ThinkingOrb } from "./ThinkingOrb";
 import { Watering } from "./Watering";
 import { SafeAreaProvider, useSafeAreaInsets } from "react-native-safe-area-context";
 import { HoldButton } from "./HoldButton";
+import { Rays } from "./Rays";
 import { GrowthSequence, preloadGrowthFrames } from "./GrowthSequence";
 import Svg, { Circle, G, Path } from "react-native-svg";
 import KizukuMark from "../assets/kizuku-mark.svg";
@@ -90,6 +92,10 @@ const GROUND_ABOVE_FLOOR = 280;
 
 /** Height of the nav's row of icons, before any home-indicator inset below it. */
 const NAV_CONTENT = 82;
+
+/** ray bursts, sized to overflow the screen edge so they never show a rim */
+const REVEAL_RAYS = 460;
+const GROWTH_RAYS = 600;
 
 /**
  * Every type's tree at each of its six stages, straight from the design file.
@@ -588,7 +594,10 @@ function HomeScreen({
             <KizukuMark width={34} height={34} />
             <Text style={styles.brandName}>kizuku</Text>
           </View>
-          <Text style={styles.homeTitle}>{plantName || personalityTypes[personality].name}</Text>
+          <StageMeter
+            actionsDone={actionsDone}
+            name={plantName || personalityTypes[personality].plant}
+          />
         </View>
         <IconButton icon="person" label="Open profile" onPress={onProfile} />
       </View>
@@ -1047,6 +1056,9 @@ function GrowthScreen({
     <Pressable accessibilityRole="button" onPress={grown ? onDone : undefined} style={styles.flex}>
       <LinearGradient colors={ritualGround(personality)} style={[styles.flex, styles.center]}>
         <View style={styles.growthStage}>
+          <Animated.View style={[styles.growthRays, { opacity: settleIn }]}>
+            <Rays size={GROWTH_RAYS} reduceMotion={reduceMotion} strength={0.4} />
+          </Animated.View>
           {/* the optimiser's opening is drawn frame by frame; the other two
               types have no clip, so they use the spring rise */}
           {transforms && personality === "optimizer" ? (
@@ -1427,7 +1439,8 @@ function ProfileScreen({
         ]}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.profileMark}>
+        {/* the type's own colour — it was a fixed amber tint whatever the type */}
+        <View style={[styles.profileMark, { backgroundColor: themes[personality].surface, borderColor: themes[personality].edge }]}>
           <Image source={plantFor(personality, stage)} resizeMode="contain" style={styles.profileSeed} />
         </View>
         <Text style={styles.profileTitle}>{type.name}</Text>
@@ -1798,6 +1811,9 @@ function RevealScreen({
             { opacity: emblem.opacity, transform: [...emblem.transform, { scale: emblemScale }] }
           ]}
         >
+          <View style={styles.revealRays}>
+            <Rays size={REVEAL_RAYS} reduceMotion={reduceMotion} />
+          </View>
           <Image
             accessibilityIgnoresInvertColors
             resizeMode="contain"
@@ -2183,6 +2199,44 @@ function BackButton({ onPress }: { onPress: () => void }) {
   return <IconButton icon="arrow-back" label="Go back" onPress={onPress} />;
 }
 
+/**
+ * The tree's name and how far it has grown, on the garden.
+ *
+ * Finch keeps an adventure bar under its bird — "1st Adventure 0/15" — and it
+ * is the one piece of its home screen that says the effort is going
+ * somewhere. This is the same promise without its pressure: six segments, one
+ * per stage the design file draws, and the current one fills by how far you
+ * are through it. There is no countdown and no number of days, because
+ * "no calendar, no streak" is the brand's own rule — a thin segment is a
+ * record of what you have done, not a reminder of what you owe.
+ */
+function StageMeter({ actionsDone, name }: { actionsDone: number; name: string }) {
+  const stage = stageFor(actionsDone);
+  const from = stageThresholds[stage - 1]!;
+  const to = (stageThresholds as readonly number[])[stage];
+  const within = to === undefined ? 1 : Math.min(1, Math.max(0, (actionsDone - from) / (to - from)));
+
+  return (
+    <View style={styles.meter} accessible accessibilityLabel={`${name}, stage ${stage} of 6`}>
+      <Text numberOfLines={1} style={styles.meterName}>{name}</Text>
+      <View style={styles.meterRow}>
+        <View style={styles.meterTrack}>
+          {stageThresholds.map((_, index) => {
+            const number = index + 1;
+            const fill = number < stage ? 1 : number === stage ? Math.max(within, 0.18) : 0;
+            return (
+              <View key={index} style={styles.meterSegment}>
+                <View style={[styles.meterFill, { width: `${fill * 100}%` }]} />
+              </View>
+            );
+          })}
+        </View>
+        <Text style={styles.meterCaption}>{stage === 6 ? "fully grown" : `stage ${stage} of 6`}</Text>
+      </View>
+    </View>
+  );
+}
+
 function IconButton({
   icon,
   label,
@@ -2328,6 +2382,24 @@ const styles = StyleSheet.create({
   brandRow: { flexDirection: "row", alignItems: "center", gap: space.xs },
   brandName: { ...text.display, color: color.forest[500], fontFamily: font.serif },
   homeTitle: { ...text.label, fontFamily: font.sans, color: color.stone[700], marginLeft: 2 },
+  meter: {
+    alignSelf: "flex-start",
+    marginTop: space.xs,
+    paddingHorizontal: space.md,
+    paddingVertical: space.sm,
+    gap: 6,
+    borderRadius: radius.group,
+    borderWidth: 1.5,
+    borderColor: ink.line,
+    backgroundColor: color.paper.card,
+    ...stamp(ink.edge, 3)
+  },
+  meterName: { ...text.journal, fontSize: 22, lineHeight: 24, color: color.forest[600] },
+  meterRow: { flexDirection: "row", alignItems: "center", gap: space.sm },
+  meterTrack: { flexDirection: "row", gap: 3 },
+  meterSegment: { width: 16, height: 8, borderRadius: 4, backgroundColor: color.forest[100], overflow: "hidden" },
+  meterFill: { height: "100%", backgroundColor: color.forest[500] },
+  meterCaption: { ...text.caption, fontFamily: font.sansMedium, color: color.stone[700] },
   iconButton: {
     width: target.min,
     height: target.min,
@@ -2492,6 +2564,8 @@ const styles = StyleSheet.create({
   namingSkipText: { ...text.caption, opacity: 0.72, textDecorationLine: "underline" },
   revealEmblem: { width: 168, height: 208, alignSelf: "center", marginBottom: space.xl },
   revealPlant: { width: "100%", height: "100%" },
+  // centred on the emblem (168x208); the burst spills past it on purpose
+  revealRays: { position: "absolute", left: (168 - REVEAL_RAYS) / 2, top: (208 - REVEAL_RAYS) / 2 },
   hydrating: { backgroundColor: color.paper[50] },
   revealName: { ...text.displayLg, marginTop: space.xs },
   revealQuote: { fontFamily: font.serifItalic, fontSize: 17, lineHeight: 26, marginTop: space.sm },
@@ -2506,11 +2580,13 @@ const styles = StyleSheet.create({
     padding: space.gutter,
     marginTop: space.lg,
     backgroundColor: color.paper.card,
-    ...elevation.lifted
+    borderWidth: 1.5,
+    borderColor: ink.line,
+    ...stamp(ink.edge, 5)
   },
   /* chips get a hairline instead of a shadow — on optimizer's yellow, fill alone
      only reaches 1.27:1, so the edge is what makes them read as objects */
-  revealTag: { backgroundColor: color.paper.card, ...elevation.flat },
+  revealTag: { backgroundColor: color.paper.card, borderWidth: 1.5, borderColor: ink.line, ...stamp(ink.edge, 2) },
   revealPattern: { ...text.bodyLg, fontSize: 16, lineHeight: 26, marginTop: space.sm },
   revealTags: { flexDirection: "row", flexWrap: "wrap", gap: space.xs, marginTop: space.md },
 
@@ -2657,9 +2733,11 @@ const styles = StyleSheet.create({
   // growth
   // both layers stand on one ground line, so the plant rises out of the seed
   growthStage: { width: 300, height: 360, alignItems: "center", justifyContent: "flex-end" },
+  // centred on the plant's middle, not the stage's, so the light is behind it
+  growthRays: { position: "absolute", left: (300 - GROWTH_RAYS) / 2, top: 190 - GROWTH_RAYS / 2 },
   growthPlantLayer: { position: "absolute", bottom: 0, width: 290, height: 356, transformOrigin: "center bottom" },
   growthSeedLayer: { position: "absolute", bottom: 0, width: 186, height: 168, transformOrigin: "center bottom" },
-  growthTitle: { fontFamily: font.serifItalic, fontSize: 19, lineHeight: 28, color: color.forest[600], marginTop: space.lg },
+  growthTitle: { fontFamily: font.serifItalic, fontSize: 19, lineHeight: 28, color: color.forest[600], marginTop: space.lg, textAlign: "center" },
   growthBody: { ...text.caption, color: color.forest[600], textAlign: "center", maxWidth: 280, marginTop: space.xs },
 
   // pattern
@@ -2685,7 +2763,9 @@ const styles = StyleSheet.create({
     borderRadius: radius.group,
     padding: space.md,
     minHeight: 168,
-    ...elevation.raised
+    borderWidth: 1.5,
+    borderColor: ink.line,
+    ...stamp(ink.edge, 3)
   },
   journalTagRow: { flexDirection: "row", marginBottom: space.xs },
   journalMoment: { marginTop: space.md, borderTopWidth: 1, borderTopColor: color.paper[300], paddingTop: space.md },
@@ -2716,7 +2796,8 @@ const styles = StyleSheet.create({
     width: 76,
     height: 76,
     borderRadius: 38,
-    backgroundColor: "#F1E8C7",
+    borderWidth: 1.5,
+    ...stamp(ink.edge, 3),
     alignItems: "center",
     justifyContent: "center",
     alignSelf: "center",
@@ -2727,8 +2808,9 @@ const styles = StyleSheet.create({
   profileSubtitle: { ...text.caption, color: color.stone[500], textAlign: "center", marginTop: space.xxs, marginBottom: space.lg },
   profileQuote: { ...text.bodyLg, color: color.forest[600] },
   profilePattern: { ...text.caption, color: color.stone[500], marginTop: space.sm },
-  profileCard: { backgroundColor: color.paper.card, borderRadius: radius.group, padding: space.md, marginBottom: space.sm },
-  settingsGroup: { backgroundColor: color.paper.card, borderRadius: radius.group, overflow: "hidden", marginBottom: space.sm },
+  profileCard: { backgroundColor: color.paper.card, borderRadius: radius.group, padding: space.md, marginBottom: space.md, borderWidth: 1.5, borderColor: ink.line, ...stamp(ink.edge, 3) },
+  // no overflow: hidden — the rows carry no fill to clip, and on iOS it would clip the edge
+  settingsGroup: { backgroundColor: color.paper.card, borderRadius: radius.group, marginBottom: space.md, borderWidth: 1.5, borderColor: ink.line, ...stamp(ink.edge, 3) },
   settingsRow: {
     minHeight: 56,
     paddingHorizontal: space.md,
