@@ -22,6 +22,7 @@ import {
   actionTemplates,
   chooseAction,
   nextAction,
+  startersFor,
   personalityTypes,
   quiz,
   stageFor,
@@ -658,12 +659,24 @@ function WorryScreen({
   onTab: (tab: MainTab) => void;
 }) {
   const [focused, setFocused] = useState(false);
+  const inputRef = useRef<TextInput>(null);
+  const starters = useMemo(() => startersFor(personality), [personality]);
+
+  /*
+   * A suggestion fills the slip and hands over the keyboard with the cursor at
+   * the end, so it reads as a start the user finishes, not an answer chosen
+   * for them.
+   */
+  const startFrom = (text: string) => {
+    onChange(text);
+    requestAnimationFrame(() => inputRef.current?.focus());
+  };
 
   return (
     <GradientScreen personality={personality}>
       {/*
-        Scrolls, like the reflection screen, because the keyboard is up the
-        moment this screen appears — the input autoFocuses. Everything used to
+        Scrolls, like the reflection screen, because the keyboard takes half the
+        screen once it is up. Everything used to
         sit in a fixed column: KeyboardAvoidingView's padding shrank the
         container, nothing inside could yield (the slip's height is a
         minHeight), and the content overflowed instead of moving, cutting "get
@@ -686,9 +699,16 @@ function WorryScreen({
         </View>
 
         <Slip note="be specific. the more honest you are, the better your action will be." personality={personality} focused={focused}>
+          {/*
+            No autoFocus. It used to raise the keyboard the moment the screen
+            appeared, which covered everything below the slip — and below the
+            slip is now where the suggestions are. Finch leaves its goal box
+            unfocused for the same reason. Tapping the slip or a suggestion
+            brings the keyboard up.
+          */}
           <TextInput
+            ref={inputRef}
             accessibilityLabel="Future worry"
-            autoFocus
             multiline
             onBlur={() => setFocused(false)}
             onChangeText={onChange}
@@ -700,6 +720,24 @@ function WorryScreen({
             value={value}
           />
         </Slip>
+
+        {value.trim().length === 0 ? (
+          <View style={styles.starters}>
+            <Eyebrow>a place to start</Eyebrow>
+            {starters.map((text) => (
+              <Pressable
+                key={text}
+                accessibilityHint="Starts your worry with this, for you to finish"
+                accessibilityRole="button"
+                onPress={() => startFrom(text)}
+                style={({ pressed }) => [styles.starter, pressed && styles.stampPressed]}
+              >
+                <Text style={styles.starterText}>{text}</Text>
+                <Icon name="arrow-forward" size={16} color={color.forest[500]} />
+              </Pressable>
+            ))}
+          </View>
+        ) : null}
 
         <View style={styles.inlineAction}>
           <PrimaryButton label="get my action" disabled={value.trim().length < 4} onPress={onContinue} />
@@ -2354,6 +2392,20 @@ const styles = StyleSheet.create({
     gap: space.md
   },
   welcomeMark: { alignSelf: "flex-start", marginBottom: space.xs, opacity: 0.9 },
+  starters: { marginTop: space.lg, gap: space.sm },
+  starter: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: space.sm,
+    minHeight: target.min + 4,
+    paddingHorizontal: space.md,
+    borderRadius: radius.group,
+    borderWidth: 1.5,
+    borderColor: ink.line,
+    backgroundColor: color.paper.card,
+    ...stamp(ink.edge, 3)
+  },
+  starterText: { ...text.body, flex: 1, color: color.stone[900] },
   quizDecline: { paddingVertical: space.md, alignItems: "center", minHeight: target.min },
   quizDeclineText: { ...text.caption, color: color.stone[500], textDecorationLine: "underline" },
   promiseContent: { flexGrow: 1, paddingHorizontal: space.gutter, paddingBottom: space.lg, justifyContent: "center", gap: space.xl },

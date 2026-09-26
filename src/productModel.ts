@@ -222,6 +222,38 @@ export function chooseAction(
 }
 
 /**
+ * Places to start, for someone who opens the worry screen and cannot name it.
+ *
+ * Finch puts suggestions under its goal box so an empty field is never the
+ * whole screen. These are shaped differently on purpose: each is written
+ * toward one action's cues, so tapping it is not a shortcut past the choice
+ * but a real way into it — "a deadline i keep putting off" is picked up by
+ * the same word-spotting that reads a typed worry, and points at start. It
+ * points; it does not force. If start was the last action given, the
+ * never-repeat rule wins and the next-best action comes back instead.
+ *
+ * They are offered only when the action they lead to is in the type's own
+ * pool, so no suggestion ends somewhere this person would never be sent.
+ * Lowercase and first person, because they are worded as the user's own.
+ */
+export const worryStarters = [
+  { leadsTo: "start", text: "a deadline i keep putting off" },
+  { leadsTo: "reach out", text: "a message i still haven't replied to" },
+  { leadsTo: "reframe", text: "what if it all goes wrong" },
+  { leadsTo: "leave it", text: "too many things on my list" },
+  { leadsTo: "say why", text: "whether any of this matters" },
+  { leadsTo: "ask", text: "what they think of me" },
+  { leadsTo: "stop early", text: "it has to be perfect first" },
+  { leadsTo: "sit still", text: "i can't stop running it in my head" },
+  { leadsTo: "look out", text: "feeling stuck, like nothing changes" }
+] as const;
+
+export function startersFor(personality: PersonalityType, limit = 5): string[] {
+  const pool = new Set(actionsFor(personality).map((index) => actionTemplates[index]!.tag as string));
+  return worryStarters.filter((starter) => pool.has(starter.leadsTo)).slice(0, limit).map((starter) => starter.text);
+}
+
+/**
  * The next action when someone asks for a different one. Cycles inside the
  * type's pool — the old version stepped through all templates, so swapping
  * could hand a planner an action written for somebody else.
