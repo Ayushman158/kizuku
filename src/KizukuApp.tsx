@@ -342,8 +342,11 @@ export function KizukuApp() {
           {screen === "naming" ? (
             <NamingScreen
               personality={personality}
+              current={plantName}
               onDone={(name) => {
-                setPlantName(name);
+                // retaking the quiz passes through here too; an empty answer
+                // ("i will name it later") keeps the name the tree already has
+                setPlantName(name || plantName);
                 setScreen("home");
               }}
             />
@@ -2009,14 +2012,17 @@ function suggestName(avoid?: string): string {
 
 function NamingScreen({
   personality,
+  current,
   onDone
 }: {
   personality: PersonalityType;
+  /** the tree's existing name, when this is reached by retaking the quiz */
+  current?: string;
   onDone: (name: string) => void;
 }) {
   const insets = useSafeAreaInsets();
   // seeded once, not on every render, so it does not change under the user
-  const [name, setName] = useState(suggestName);
+  const [name, setName] = useState(() => current || suggestName());
   const theme = themes[personality];
   const type = personalityTypes[personality];
   const reduceMotion = useReduceMotionPreference();
