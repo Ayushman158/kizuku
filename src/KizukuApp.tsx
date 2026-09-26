@@ -1048,7 +1048,9 @@ function GrowthScreen({
 
   return (
     <Pressable accessibilityRole="button" onPress={grown ? onDone : undefined} style={styles.flex}>
-      <LinearGradient colors={themes[personality].growth} style={[styles.flex, styles.center]}>
+      {/* the moment something arrives gets the same painted ground as the ritual it ends */}
+      <LinearGradient colors={ritualGround(personality)} style={[styles.flex, styles.center]}>
+      <Wash personality={personality} />
         <View style={styles.growthStage}>
           {/* the optimiser's opening is drawn frame by frame; the other two
               types have no clip, so they use the spring rise */}
@@ -2695,7 +2697,7 @@ const styles = StyleSheet.create({
   growthPlantLayer: { position: "absolute", bottom: 0, width: 290, height: 356, transformOrigin: "center bottom" },
   growthSeedLayer: { position: "absolute", bottom: 0, width: 186, height: 168, transformOrigin: "center bottom" },
   growthTitle: { fontFamily: font.serifItalic, fontSize: 19, lineHeight: 28, color: color.forest[600], marginTop: space.lg },
-  growthBody: { ...text.caption, color: color.stone[700], textAlign: "center", maxWidth: 280, marginTop: space.xs },
+  growthBody: { ...text.caption, color: color.forest[600], textAlign: "center", maxWidth: 280, marginTop: space.xs },
 
   // pattern
   tabScroll: { paddingHorizontal: space.gutter, paddingTop: space.xl, paddingBottom: 108 },
